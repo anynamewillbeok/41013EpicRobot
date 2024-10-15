@@ -48,26 +48,29 @@ classdef (Abstract) GenericRenderable < handle & ParentChild & Tickable
             
             %end
 
-            local_tri = self.tri;
-            local_pts = self.pts;
-            local_matrix = self.current_transform;
-            pts_height = height(local_pts);
-
-            new_pts = nan(pts_height, 3);
-
-            for j = 1:pts_height
-                thePoint = local_pts(j,:).';
-                thePoint(4,1) = 1;
-                newPosition = local_matrix * thePoint;
-                transposed = newPosition.';
-                new_pts(j,:) = transposed(1:3);
-            end
+            
 
             if self.needsRedraw
                 try
                     delete(self.draw_handle)
                 catch
                 end
+
+                local_tri = self.tri;
+                local_pts = self.pts;
+                local_matrix = self.current_transform;
+                pts_height = height(local_pts);
+
+                new_pts = nan(pts_height, 3);
+
+                for j = 1:pts_height
+                    thePoint = local_pts(j,:).';
+                    thePoint(4,1) = 1;
+                    newPosition = local_matrix * thePoint;
+                    transposed = newPosition.';
+                    new_pts(j,:) = transposed(1:3);
+                end
+
                 hold on
                 self.draw_handle = patch('Faces',local_tri,'Vertices',new_pts, 'FaceColor', [0 0.1 0.3], 'EdgeColor', 'none');
                 self.render_optional();
