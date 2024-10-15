@@ -5,7 +5,7 @@ classdef ConveyorBelt < GenericRenderable
 
     methods
         function tick(self) %All objects attached to the Conveyor Belt will be translated by speed.
-            number_of_ticks = number_of_ticks + 1;
+            self.number_of_ticks = self.number_of_ticks + 1;
             num_children = length(self.attached_child);
             c = self.current_transform;
             %translate each object by HOW MUCH
@@ -28,6 +28,7 @@ classdef ConveyorBelt < GenericRenderable
                 child_pos = self.attached_child{i}.current_transform;
                 child_pos = child_pos * applied_transform;
                 self.attached_child{i}.set_transform_4by4(child_pos);
+                self.attached_child{i}.tick(); %also tick children
             end
         end
 
