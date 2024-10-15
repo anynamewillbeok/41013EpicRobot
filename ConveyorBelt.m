@@ -25,7 +25,7 @@ classdef ConveyorBelt < GenericRenderable
             
             for i = 1:num_children
                 child_pos = self.attached_child{i}.current_transform;
-                child_pos = child_pos * applied_transform
+                child_pos = child_pos * applied_transform;
                 self.attached_child{i}.set_transform_4by4(child_pos);
             end
         end
