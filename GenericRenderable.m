@@ -3,8 +3,8 @@ classdef GenericRenderable < handle
         tri (:,3) double {}
         pts (:,3) double {}
         current_transform (4,4) double {mustBeNonNan} = eye(4)
-        attached_parent = createArray(1,0,'GenericRenderable');
-        attached_child = createArray(1,0,'GenericRenderable');
+        attached_parent (1,1) cell {} = cell(1,1);
+        attached_child (1,:) cell {} = cell(1,0);
         draw_handle (1,:) matlab.graphics.primitive.Patch {}
     end
 
@@ -75,19 +75,19 @@ classdef GenericRenderable < handle
         end
         %% Attach new parent
         function attach_parent(self, new_parent)
-            if ~isempty(self.attached_parent)
-                self.attached_parent.detach_child(self) 
+            if ~isnan(self.attached_parent{1})
+                self.attached_parent{1}.detach_child(self) 
             end
 
-            self.attached_parent = new_parent;
-            self.attached_parent.attach_child(self)
+            self.attached_parent{1} = new_parent;
+            self.attached_parent{1}.attach_child(self)
         end
         %% Detach
         function detach_child(self, object_to_detach)
             if ~isempty(self.attached_child)
                 for i = 1:length(self.attached_child)
-                    if self.attached_child(i) == object_to_detach
-                        self.attached_child(i) = [];
+                    if self.attached_child{i} == object_to_detach
+                        self.attached_child{i} = [];
                     end
                 end
             end
