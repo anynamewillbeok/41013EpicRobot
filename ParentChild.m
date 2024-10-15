@@ -1,5 +1,5 @@
 classdef (Abstract) ParentChild < handle
-    properties
+    properties (GetAccess = public, SetAccess = private)
         attached_parent (1,1) cell {} = cell(1,1);
         attached_child (1,:) cell {} = cell(1,0);
     end

@@ -1,7 +1,9 @@
 classdef GenericRenderable < handle & ParentChild
+    properties(SetAccess = immutable)
+        tri(:,3) double {}
+        pts(:,3) double {}
+    end
     properties
-        tri (:,3) double {}
-        pts (:,3) double {}
         current_transform (4,4) double {mustBeNonNan} = eye(4)
         draw_handle (1,:) matlab.graphics.primitive.Patch {}
     end
