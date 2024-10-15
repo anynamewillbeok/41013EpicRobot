@@ -1,4 +1,4 @@
-classdef GenericRenderable < handle & ParentChild
+classdef (Abstract) GenericRenderable < handle & ParentChild & Tickable
     properties(SetAccess = immutable)
         tri(:,3) double {}
         pts(:,3) double {}
@@ -74,17 +74,7 @@ classdef GenericRenderable < handle & ParentChild
             end
         end
 
-        %Placeholder tick function
-        function tick(self)
-            %nothing
-        end
-
-        %Placeholder custom render function for editing handle variables
-        %after generation.
         function render_optional(self)
-            %
         end
     end
-
-    
 end
