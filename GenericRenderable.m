@@ -75,7 +75,7 @@ classdef GenericRenderable < handle
         end
         %% Attach new parent
         function attach_parent(self, new_parent)
-            if ~isnan(self.attached_parent{1})
+            if ~isempty(self.attached_parent{1})
                 self.attached_parent{1}.detach_child(self) 
             end
 
@@ -85,10 +85,13 @@ classdef GenericRenderable < handle
         %% Detach
         function detach_child(self, object_to_detach)
             if ~isempty(self.attached_child)
-                for i = 1:length(self.attached_child)
+                i = 1;
+                while all(i >= 1 & i <= length(self.attached_child))
                     if self.attached_child{i} == object_to_detach
-                        self.attached_child{i} = [];
+                        self.attached_child(i) = []; 
+                        i = i - 1; 
                     end
+                    i = i + 1;
                 end
             end
         end
@@ -100,10 +103,10 @@ classdef GenericRenderable < handle
         %% Make Orphan
         function orphan(self)
 
-            if ~isempty(self.attached_parent)
-                self.attached_parent.detach_child(self)
+            if ~isempty(self.attached_parent{1})
+                self.attached_parent{1}.detach_child(self)
             end
-            self.attached_parent = [];
+            self.attached_parent{1} = [];
             
         end
 
