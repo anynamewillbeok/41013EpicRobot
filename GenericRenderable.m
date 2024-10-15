@@ -1,11 +1,11 @@
 classdef GenericRenderable < handle
     properties
-        tri
-        pts
-        current_transform = eye(4)
-        attached_parent
-        attached_child = createArray(0,0,'GenericRenderable')
-        draw_handle
+        tri (:,3) double {}
+        pts (:,3) double {}
+        current_transform (4,4) double {mustBeNonNan} = eye(4)
+        attached_parent = createArray(1,0,'GenericRenderable');
+        attached_child = createArray(1,0,'GenericRenderable');
+        draw_handle (1,:) matlab.graphics.primitive.Patch {}
     end
 
     methods
@@ -13,6 +13,7 @@ classdef GenericRenderable < handle
         function self = GenericRenderable(ply_file)
             % Read the ply file
             [self.tri, self.pts] = plyread(ply_file, 'tri');
+            
         end
         %% Set a pose and scale it ONLY FOR TROUBLESHOOTING
         function position = set_brick_pose(self, x, y, z, rotation_matrix)
@@ -63,11 +64,12 @@ classdef GenericRenderable < handle
 
             hold on
             self.draw_handle = patch('Faces',local_tri,'Vertices',new_pts, 'FaceColor', [0 0.1 0.3], 'EdgeColor', 'none');
+            self.render_optional();
             hold off
 
             if ~isempty(self.attached_child)
                 for i = 1:length(self.attached_child)
-                    self.attached_child(i).render()
+                    self.attached_child{i}.render()
                 end
             end
         end
@@ -92,7 +94,7 @@ classdef GenericRenderable < handle
         end
         %% Attach Child
         function attach_child(self, child)
-           self.attached_child(end+1) = child;
+           self.attached_child{end+1} = child; %curly braces here needed for cell array
 
         end
         %% Make Orphan
@@ -104,5 +106,18 @@ classdef GenericRenderable < handle
             self.attached_parent = [];
             
         end
+
+        %Placeholder tick function
+        function tick(self)
+            %nothing
+        end
+
+        %Placeholder custom render function for editing handle variables
+        %after generation.
+        function render_optional(self)
+            %
+        end
     end
+
+    
 end
