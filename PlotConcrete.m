@@ -28,6 +28,5 @@ xlabel('X-axis');
 ylabel('Y-axis');
 zlabel('Z-axis');
 
-% Set 3D view
 view(3);
 grid off;
