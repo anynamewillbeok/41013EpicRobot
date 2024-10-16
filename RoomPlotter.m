@@ -19,23 +19,27 @@ classdef RoomPlotter
             hold on;
             axis equal;
             %% change for bigger room
-            xlim([0 10]);
+            xlim([-10 0]);
             ylim([0 10]);
             zlim([0 10]);
 
-            [X, Y] = meshgrid(0:10, 0:10);
+            [X, Y] = meshgrid(-10:0, 0:10);
             Z = zeros(size(X));
             surface(X, Y, Z, 'CData', obj.imgFloor, 'FaceColor', 'texturemap');
+            
             [Z2, Y2] = meshgrid(0:10, 0:10);
             X2 = zeros(size(Z2));
             surface(X2, Y2, Z2, 'CData', obj.imgZY, 'FaceColor', 'texturemap');
-            [X3, Z3] = meshgrid(0:10, 0:10);
+            
+            [X3, Z3] = meshgrid(-10:0, 0:10); 
             Y3 = zeros(size(X3)); 
             surface(X3, Y3, Z3, 'CData', obj.imgZX, 'FaceColor', 'texturemap');
+            
             xlabel('X-axis');
             ylabel('Y-axis');
             zlabel('Z-axis');
             view(3);
+            rotate3d on; 
         end
     end
 end
