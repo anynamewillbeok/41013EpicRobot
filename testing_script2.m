@@ -25,8 +25,8 @@ view(3)
 for i = 1:1000
     conveyor_belt.tick();
     conveyor_belt.render();
-    %drawnow();
-    pause(16.66/1000);
+    drawnow limitrate;
+    %pause(16.66/1000);
     axis equal
 end
 
