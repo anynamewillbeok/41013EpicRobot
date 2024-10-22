@@ -1,8 +1,11 @@
 classdef UR3EC < handle & ParentChild & Tickable
     properties
         robot 
-        present_queue_robot %Present queue holds both robot AND arm Q positions;
+        present_queue_robot %Present queue holds
         present_queue_claw
+        pc_type = "Robot"
+        detection(1,1) DetectionController
+        detection_cubes(1,:) DetectionCube
     end
 
     properties(SetAccess = private)
@@ -11,15 +14,18 @@ classdef UR3EC < handle & ParentChild & Tickable
     end
 
     methods
-        function self = UR3EC(transform)
-            if nargin == 0
-                self.robot = A2UR3E(transl(0,0,0));
-                
-            else
-                self.robot = A2UR3E(transform);
-                
-            end
+        function self = UR3EC(transform, detection)
+            self.robot = A2UR3E(transform);
+            self.detection = detection;
+
+            %starting Q positions
+            %Q = [0,0,0]
+            %self.robot.model.animate
             self.state = 0;
+
+            %setup detection cube
+            cube1 = DetectionCube("")
+            
         end
 
 
@@ -62,7 +68,7 @@ classdef UR3EC < handle & ParentChild & Tickable
                     %Increment state.
                 case 6
                     %Stage 6: Return
-                    %Once present queue is empty, return back to neutral
+                    %Once present queue is empty, emit path to neutral
                     %position (arm upwards)
                     %Set state to 0.
                    
@@ -72,9 +78,15 @@ classdef UR3EC < handle & ParentChild & Tickable
         end
 
         function render(self)
-            disp("UR3EC: Render code stubbed");
-            %newQ = present_queue_robot.pull;
-            %robot.model.animate(newQ);
+            %disp("UR3EC: Render code stubbed");
+            %robotQ = self.present_queue_robot.pull();
+            %clawQ = self.present_queue_claw.pull()
+
+            %self.robot.model.animate(robotQ);
+            %claw rendering code idk
+            
         end
+
+        
     end
 end

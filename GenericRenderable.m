@@ -16,6 +16,7 @@ classdef (Abstract) GenericRenderable < handle & ParentChild & Tickable
         %% Constructor: Create Renderable instance using local file
         function self = GenericRenderable(ply_file)
             % Read the ply file
+            
             [self.tri, self.pts] = plyread(ply_file, 'tri');
             
             

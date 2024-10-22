@@ -20,7 +20,12 @@ b.set_transform_4by4(transl(0.3,-0.1,0));
 c.attach_parent(conveyor_belt);
 c.set_transform_4by4(transl(-0.2,0.2,0));
 
-robot_ur3e = UR3EC(transl(-2,-0.6,0));
+dc = DetectionController;
+dc.register(a);
+dc.register(b);
+dc.register(c);
+
+robot_ur3e = UR3EC(transl(-2,-0.6,0), dc);
 
 axis equal
 view(3)

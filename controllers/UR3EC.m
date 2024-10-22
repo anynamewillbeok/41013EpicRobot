@@ -4,6 +4,8 @@ classdef UR3EC < handle & ParentChild & Tickable
         present_queue_robot %Present queue holds
         present_queue_claw
         pc_type = "Robot"
+        detection(1,1) DetectionController
+        detection_cubes(1,:) DetectionCube
     end
 
     properties(SetAccess = private)
@@ -12,12 +14,23 @@ classdef UR3EC < handle & ParentChild & Tickable
     end
 
     methods
-        function self = UR3EC(transform)
+        function self = UR3EC(transform, detection)
             self.robot = A2UR3E(transform);
+            self.detection = detection;
+
             %starting Q positions
             %Q = [0,0,0]
             %self.robot.model.animate
             self.state = 0;
+
+            %setup detection cube
+            %transform 1: towards the conveyor belt idk where that is
+            %really 
+            cube1_transform = transform
+            cube1_transform = cube1_transform * transl(0.5, 0.6 , 0);
+            cube1_transform = cube1_transform * trscale(0.3, 0.5, 0.5);
+            cube1 = DetectionCube("Cube.ply",detection,cube1_transform);
+            self.detection_cubes(1) = cube1;
         end
 
 
@@ -26,6 +39,7 @@ classdef UR3EC < handle & ParentChild & Tickable
 
             switch self.state
                 case 0
+                    objects = self.detection_cubes(1).tick()
                     %STAGE 0: Detect rubbish. 
                     %Once detected, emit pathway to being above rubbish's projected
                     %position with ending velocity. Increment state.
