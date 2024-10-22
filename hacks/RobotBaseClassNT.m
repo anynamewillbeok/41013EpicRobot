@@ -196,8 +196,7 @@ classdef RobotBaseClassNT < handle
             initialSurfaceCount = self.CountTiledFloorSurfaces();
             % Display robot
             [ax,by] = view;
-            disp(self.model.d)
-            disp(self.model.a)
+            
             
             roughMinMax = sum(abs(self.model.d) + abs(self.model.a));
             self.workspace = [-roughMinMax roughMinMax -roughMinMax roughMinMax -0.01 roughMinMax]; 

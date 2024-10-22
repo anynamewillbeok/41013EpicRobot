@@ -9,8 +9,7 @@ classdef DetectionCube < GenericRenderable
     end
     methods
         function self = DetectionCube(ply_file, dco, transform)
-            
-            
+
             %call GenericRenderable constructor
             self@GenericRenderable(ply_file);
             self.dco = dco;
@@ -31,8 +30,7 @@ classdef DetectionCube < GenericRenderable
                 if isequal(hull, hull2)
                     objects_detected{end+1} = object;
                 end
-            end
-            
+            end    
         end
 
         function set_transform_4by4(self, matrix)
@@ -57,7 +55,7 @@ classdef DetectionCube < GenericRenderable
             end
         end
 
-        function render_custom(self)
+        function render_optional(self)
             self.draw_handle.FaceColor = 'magenta';
             self.draw_handle.FaceAlpha = 0.3;
 

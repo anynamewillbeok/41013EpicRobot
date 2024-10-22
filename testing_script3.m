@@ -11,6 +11,11 @@ a = Rubbish('HalfSizedRedGreenBrick.ply');
 b = Rubbish('HalfSizedRedGreenBrick.ply');
 c = Rubbish('HalfSizedRedGreenBrick.ply');
 
+dc = DetectionController;
+dc.register(a);
+dc.register(b);
+dc.register(c);
+
 a.attach_parent(conveyor_belt);
 a.set_transform_4by4(transl(0,0,0));
 
@@ -18,19 +23,17 @@ b.attach_parent(conveyor_belt);
 b.set_transform_4by4(transl(0.3,-0.1,0));
 
 c.attach_parent(conveyor_belt);
-c.set_transform_4by4(transl(-0.2,0.2,0));
+c.set_transform_4by4(transl(-0.2,0.1,0));
 
-dc = DetectionController;
-dc.register(a);
-dc.register(b);
-dc.register(c);
+drawnow();
+axis equal;
+view(3);
 
-robot_ur3e = UR3EC(transl(-2,-0.6,0), dc);
+robot_ur3e = UR3EC(transl(-2,-0.4,0), dc);
 
-axis equal
-view(3)
 
-rate = rateControl(20);
+
+rate = rateControl(30);
 for i = 1:1000
     conveyor_belt.tick();
     robot_ur3e.tick();

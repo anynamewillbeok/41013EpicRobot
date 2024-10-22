@@ -9,14 +9,17 @@ classdef UR3EC < handle & ParentChild & Tickable
     end
 
     properties(SetAccess = private)
-        state(1,1) {mustBeInteger, mustBeNonnegative, mustBeLessThan(state, 256)}
+        state(1,1) {mustBeInteger, mustBeNonnegative, mustBeLessThan(state, 100000)}
         tracked_object
+        tracked_object_info;
+        tracked_object_velocity;
     end
 
     methods
         function self = UR3EC(transform, detection)
             self.robot = A2UR3E(transform);
             self.detection = detection;
+            self.robot.model.animate([-0.06,0,-pi + 0.2,0,-pi/2,pi/2,0]);
 
             %starting Q positions
             %Q = [0,0,0]
@@ -27,8 +30,8 @@ classdef UR3EC < handle & ParentChild & Tickable
             %transform 1: towards the conveyor belt idk where that is
             %really 
             cube1_transform = transform
-            cube1_transform = cube1_transform * transl(0.5, 0.6 , 0);
-            cube1_transform = cube1_transform * trscale(0.3, 0.5, 0.5);
+            cube1_transform = cube1_transform * transl(0.5, 0.4 , 0);
+            cube1_transform = cube1_transform * trscale(0.3, 0.6, 0.5);
             cube1 = DetectionCube("Cube.ply",detection,cube1_transform);
             self.detection_cubes(1) = cube1;
         end
@@ -39,7 +42,15 @@ classdef UR3EC < handle & ParentChild & Tickable
 
             switch self.state
                 case 0
-                    objects = self.detection_cubes(1).tick()
+                    detected_objects = self.detection_cubes(1).tick();
+                    if ~isempty(detected_objects)
+                        disp("Detected object!");
+                        self.tracked_object = detected_objects(1); %select first object
+                        self.tracked_object_info{1} = self.tracked_object{1}.current_transform;
+                        self.state = 1000;
+                    end
+                    
+
                     %STAGE 0: Detect rubbish. 
                     %Once detected, emit pathway to being above rubbish's projected
                     %position with ending velocity. Increment state.
@@ -80,10 +91,36 @@ classdef UR3EC < handle & ParentChild & Tickable
                    
                 case 7
                 case 8
+                case 1000
+                    %Stage 1000: Substage of stage 0. Used to measure
+                    %velocity of object and use this information to
+                    %generate path to object
+
+                    self.tracked_object_info{2} = self.tracked_object{1}.current_transform;
+                    self.tracked_object_velocity = self.tracked_object_info{2}(1:3,4) - self.tracked_object_info{1}(1:3,4);
+
+                    %Generate path
+
+                    oldQ = self.robot.model.getpos();
+                    %project
+                    projected_distance = self.tracked_object_velocity * 50;
+                    projected_position = self.tracked_object_info{2} * transl(projected_distance);
+                    
+                    %render a rubbish here
+                    projectedObject = copy(self.tracked_object{1});
+                    projectedObject.set_transform_4by4(projected_position);
+                    projectedObject.render();
+                    projectedObject.draw_handle.FaceColor = 'green';
+                    projectedObject.draw_handle.FaceAlpha = 0.5;
+
+                    %disp(projected_position)
+                    self.state = 1;
             end
         end
 
         function render(self)
+            self.detection_cubes(1).render();
+            
             %disp("UR3EC: Render code stubbed");
             %robotQ = self.present_queue_robot.pull();
             %clawQ = self.present_queue_claw.pull()

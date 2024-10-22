@@ -1,5 +1,5 @@
-classdef (Abstract) GenericRenderable < handle & ParentChild & Tickable
-    properties(SetAccess = immutable)
+classdef (Abstract) GenericRenderable < handle & ParentChild & Tickable & matlab.mixin.Copyable
+    properties
         tri(:,3) double {}
         pts(:,3) double {}
     end
@@ -45,7 +45,7 @@ classdef (Abstract) GenericRenderable < handle & ParentChild & Tickable
 
         end
         %% Render Object
-        function render(self)
+        function return_object = render(self)
 
             %if ~isnan(self.draw_handle)
             
@@ -79,6 +79,7 @@ classdef (Abstract) GenericRenderable < handle & ParentChild & Tickable
                 self.render_optional();
                 self.needsRedraw = false;
                 hold off
+                return_object = self.draw_handle;
             end
 
             if ~isempty(self.attached_child)
