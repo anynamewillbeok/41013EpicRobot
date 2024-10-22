@@ -1,7 +1,7 @@
 classdef UR3EC < handle & ParentChild & Tickable
     properties
         robot 
-        present_queue_robot %Present queue holds both robot AND arm Q positions;
+        present_queue_robot %Present queue holds
         present_queue_claw
     end
 
@@ -77,5 +77,7 @@ classdef UR3EC < handle & ParentChild & Tickable
             %claw rendering code idk
             
         end
+
+        
     end
 end

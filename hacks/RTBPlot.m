@@ -1,5 +1,5 @@
 %RTBPlot Plot utilities for Robotics Toolbox
-% MODIFIED TO ALLOW NEGATIVE QLIMS FOR PRISMATICS LINE 755
+% MODIFIED TO ALLOW NEGATIVE QLIMS FOR PRISMATICS LINE 755 
 % Copyright (C) 1993-2017, by Peter I. Corke
 %
 % This file is part of The Robotics Toolbox for MATLAB (RTB).
