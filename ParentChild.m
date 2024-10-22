@@ -4,6 +4,10 @@ classdef (Abstract) ParentChild < handle
         attached_child (1,:) cell {} = cell(1,0);
     end
 
+    properties (Abstract)
+        pc_type string;
+    end
+
     methods
         %% Attach new parent
         function attach_parent(self, new_parent)

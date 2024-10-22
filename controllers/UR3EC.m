@@ -3,6 +3,7 @@ classdef UR3EC < handle & ParentChild & Tickable
         robot 
         present_queue_robot %Present queue holds
         present_queue_claw
+        pc_type = "Robot"
     end
 
     properties(SetAccess = private)

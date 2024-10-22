@@ -9,6 +9,7 @@ classdef (Abstract) GenericRenderable < handle & ParentChild & Tickable
     properties
         current_transform (4,4) double {mustBeNonNan} = eye(4)
         draw_handle (1,:) matlab.graphics.primitive.Patch {}
+        
     end
 
     methods
@@ -16,6 +17,7 @@ classdef (Abstract) GenericRenderable < handle & ParentChild & Tickable
         function self = GenericRenderable(ply_file)
             % Read the ply file
             [self.tri, self.pts] = plyread(ply_file, 'tri');
+            
             
         end
         %% Set a pose and scale it ONLY FOR TROUBLESHOOTING
