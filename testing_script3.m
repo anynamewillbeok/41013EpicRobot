@@ -28,7 +28,6 @@ c.set_transform_4by4(transl(-0.2,0.1,0));
 drawnow();
 axis equal;
 view(3);
-
 robot_ur3e = UR3EC(transl(-2,-0.4,0), dc);
 
 

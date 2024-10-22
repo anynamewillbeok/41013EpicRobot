@@ -31,6 +31,7 @@ classdef DetectionCube < GenericRenderable
                     objects_detected{end+1} = object;
                 end
             end    
+            self.detected_objects = objects_detected;
         end
 
         function set_transform_4by4(self, matrix)

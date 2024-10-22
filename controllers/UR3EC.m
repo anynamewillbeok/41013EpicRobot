@@ -60,6 +60,15 @@ classdef UR3EC < handle & ParentChild & Tickable
                     %Once present queue is empty, maintaining rubbish sideways velocity, emit path move
                     %end effector downwards towards rubbish, while opening grabber.
                     %Increment state.
+
+                    %Perhaps use RMRC to generate path? has to be
+                    %constantly downwards and movement slightly in a
+                    %straight path
+                    %in english: generate jacobian of current Q, calculate
+                    %joint velocity vector by multiplying inverse of
+                    %jacobian by desired velocity vector
+                    %do this over and over again until we reach the
+                    %rubbish? then emit
                 case 2
                     %STAGE 2: Close
                     %Once present queue is empty, emit gripper closing
