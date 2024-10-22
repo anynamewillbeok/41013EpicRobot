@@ -73,12 +73,8 @@ classdef UR3EC < handle & ParentChild & Tickable
 
         function render(self)
             disp("UR3EC: Render code stubbed");
-            %robotQ = self.present_queue_robot.pull();
-            %clawQ = self.present_queue_claw.pull()
-
-            %self.robot.model.animate(robotQ);
-            %claw rendering code idk
-            
+            %newQ = present_queue_robot.pull;
+            %robot.model.animate(newQ);
         end
     end
 end
