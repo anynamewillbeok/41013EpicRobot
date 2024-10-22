@@ -46,7 +46,7 @@ classdef A2UR3E < RobotBaseClassNT
             %modded LinearUR5 section because 
             link(1) = Link('theta',0,'alpha',-pi/2,'prismatic','qlim',[-0.8, -0.06]);
             link(2) = Link('d',0.1599,'a',0,'alpha',pi/2,'qlim',deg2rad([-360 360]), 'offset',0);
-            link(1).d = 0; %i need to do this otherwise something explodes in RobotBaseClass
+            link(1).d = 0; %i need to do this 
 
             %UR3e section
 

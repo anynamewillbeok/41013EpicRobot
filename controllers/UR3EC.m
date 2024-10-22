@@ -12,13 +12,10 @@ classdef UR3EC < handle & ParentChild & Tickable
 
     methods
         function self = UR3EC(transform)
-            if nargin == 0
-                self.robot = A2UR3E(transl(0,0,0));
-                
-            else
-                self.robot = A2UR3E(transform);
-                
-            end
+            self.robot = A2UR3E(transform);
+            %starting Q positions
+            %Q = [0,0,0]
+            %self.robot.model.animate
             self.state = 0;
         end
 
