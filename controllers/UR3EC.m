@@ -62,7 +62,7 @@ classdef UR3EC < handle & ParentChild & Tickable
                     %Increment state.
                 case 6
                     %Stage 6: Return
-                    %Once present queue is empty, return back to neutral
+                    %Once present queue is empty, emit path to neutral
                     %position (arm upwards)
                     %Set state to 0.
                    
@@ -72,7 +72,7 @@ classdef UR3EC < handle & ParentChild & Tickable
         end
 
         function render(self)
-            disp("UR3EC: Render code stubbed");
+            %disp("UR3EC: Render code stubbed");
             %robotQ = self.present_queue_robot.pull();
             %clawQ = self.present_queue_claw.pull()
 

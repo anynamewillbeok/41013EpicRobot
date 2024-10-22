@@ -1,4 +1,4 @@
-classdef A2UR3E < RobotBaseClass
+classdef A2UR3E < RobotBaseClassNT
     %% UR3e Universal Robot 3kg payload robot model
     %
     % WARNING: This model has been created by UTS students in the subject
