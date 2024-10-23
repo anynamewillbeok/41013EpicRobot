@@ -1,6 +1,6 @@
 classdef ConveyorBelt < GenericRenderable
     properties
-        speed = 0.001
+        speed = 0.002
         pc_type = "ConveyorBelt";
     end
 

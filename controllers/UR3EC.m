@@ -10,6 +10,8 @@ classdef UR3EC < handle & ParentChild & Tickable
         path_lengths = [50,35,50,50,50,50,50,50];
 
         height_gap = 0.2 %Distance buffer to have between jtraj and RMRC when doing downwards motion
+
+        projected_object
     end
 
     properties(SetAccess = private)
@@ -82,6 +84,10 @@ classdef UR3EC < handle & ParentChild & Tickable
                     %rubbish? then emit
 
                     if self.present_queue_robot.is_empty
+                        delete(self.projected_object.draw_handle);
+                        delete(self.projected_object);
+                        
+                        
 
                     PATH_LENGTH = self.path_lengths(2);
                     %Generate path                  
@@ -95,6 +101,7 @@ classdef UR3EC < handle & ParentChild & Tickable
                     projectedObject.render();
                     projectedObject.draw_handle.FaceColor = 'green';
                     projectedObject.draw_handle.FaceAlpha = 0.5;
+                    self.projected_object = projectedObject;
 
                     queue = nan(PATH_LENGTH, length(self.robot.model.links));
                     local_q = self.current_q;
@@ -130,6 +137,11 @@ classdef UR3EC < handle & ParentChild & Tickable
                     %neutral position. 
                     %Increment state.
                     if self.present_queue_robot.is_empty
+                        
+                        delete(self.projected_object.draw_handle);
+                        delete(self.projected_object);
+                        
+                        drawnow
                         %find start velocity, same as what we
                         %did in case 1
                         self.tracked_object{1}.attach_parent(self);
@@ -137,7 +149,7 @@ classdef UR3EC < handle & ParentChild & Tickable
                         new_q = deg2rad([90,-90,0,-90,-90,0]);
                         jac = self.robot.model.jacob0(self.current_q);
                         jaci = inv(jac);
-                        qd = jaci * [self.tracked_object_velocity(1) * PATH_LENGTH self.tracked_object_velocity(2) * PATH_LENGTH -self.height_gap / PATH_LENGTH 0 0 0]'
+                        qd = jaci * [self.tracked_object_velocity(1) * PATH_LENGTH self.tracked_object_velocity(2) * PATH_LENGTH 0 0 0 0]'
                         disp("------QD------")
                         qdt = qd';
 
@@ -238,7 +250,7 @@ classdef UR3EC < handle & ParentChild & Tickable
                     trajectory = jtraj(self.robot.model.getpos,moveto,PATH_LENGTH,[0 0 0 0 0 0],qd');
                     self.present_queue_robot.add(trajectory);
 
-                 
+                    self.projected_object = projectedObject;
                     self.state = 1;
 
 
