@@ -6,11 +6,9 @@ view(3);
 xlim([-3 0]);
 ylim([-1.3 0.5]);
 zlim([-0.5 1.3]);
-
 drawnow();
 
-gg = light()
-gg.Position = [-4, 0, 2];
+
 
 conveyor_belt = ConveyorBelt('ConveyorBeltFixed.PLY');
 
@@ -35,6 +33,10 @@ c.attach_parent(conveyor_belt);
 c.set_transform_4by4(transl(-0.2,0.1,0));
 
 conveyor_belt.render();
+
+light('Style','local','Position',[ -1.5 0 2],'Parent',gca);
+
+
 drawnow;
 
 robot_ur3e = UR3EC(transl(-0.5,-0.4,0), dc);
@@ -49,10 +51,7 @@ ylim([-1.3 0.5]);
 zlim([-0.5 1.3]);
 
 rate = rateControl(30);
-for i = 1:100000
-
-    
-    
+for i = 1:100000  
     %Every tick, random chance to spawn a new Rubbish
     if mod(i,50) == 0
         %Spawn brick
@@ -67,18 +66,12 @@ for i = 1:100000
     robot_ur3e2.tick();
     robot_ur3e3.tick();
     robot_ur3e4.tick();
-
-    waitfor(rate);
-
     conveyor_belt.render();
     robot_ur3e.render();
     robot_ur3e2.render();
     robot_ur3e3.render();
     robot_ur3e4.render();
-    waitfor(rate);
     drawnow;
-    
-    
-    
+    waitfor(rate);
     
 end
