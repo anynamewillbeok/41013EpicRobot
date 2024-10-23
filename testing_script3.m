@@ -28,18 +28,18 @@ c.set_transform_4by4(transl(-0.2,0.1,0));
 drawnow();
 axis equal;
 view(3);
-robot_ur3e = UR3EC(transl(-2,-0.4,0), dc);
+robot_ur3e = UR3EC(transl(-0.5,-0.4,0), dc);
 
 
 
-%rate = rateControl(10);
+rate = rateControl(20);
 for i = 1:100000
     conveyor_belt.tick();
     robot_ur3e.tick();
     conveyor_belt.render();
     robot_ur3e.render();
     drawnow;
-    %waitfor(rate);
+    waitfor(rate);
     
     axis equal
 end

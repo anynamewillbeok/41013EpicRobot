@@ -1,13 +1,15 @@
 classdef UR3EC < handle & ParentChild & Tickable
     properties
         robot 
-        present_queue_robot FIFO %Present queue holds
+        present_queue_robot FIFO %Present queues
         present_queue_claw FIFO
         pc_type = "Robot"
         detection(1,1) DetectionController
         detection_cubes(1,:) DetectionCube
 
         path_lengths = [50,35,50,50,50,50,50,50];
+
+        height_gap = 0.2 %Distance buffer to have between jtraj and RMRC when doing downwards motion
     end
 
     properties(SetAccess = private)
@@ -37,8 +39,8 @@ classdef UR3EC < handle & ParentChild & Tickable
             %transform 1: towards the conveyor belt idk where that is
             %really 
             cube1_transform = transform
-            cube1_transform = cube1_transform * transl(-0.3, 0.4, 0);
-            cube1_transform = cube1_transform * trscale(1, 0.6, 0.5);
+            cube1_transform = cube1_transform * transl(0, 0.4, 0);
+            cube1_transform = cube1_transform * trscale(0.2, 0.6, 0.5);
             cube1 = DetectionCube("Cube.ply",detection,cube1_transform);
             self.detection_cubes(1) = cube1;
         end
@@ -99,7 +101,7 @@ classdef UR3EC < handle & ParentChild & Tickable
                     for i = 1:PATH_LENGTH %Generate path with multiple RMRC
                         jac = self.robot.model.jacob0(local_q);
                         jaci = inv(jac);
-                        qd = jaci * [self.tracked_object_velocity(1) self.tracked_object_velocity(2) -0.1 / PATH_LENGTH 0 0 0]';
+                        qd = jaci * [self.tracked_object_velocity(1) self.tracked_object_velocity(2) -self.height_gap / PATH_LENGTH 0 0 0]';
                         qdt = qd';
                         local_q = local_q + qdt;
                         queue(i,:) = local_q;
@@ -135,7 +137,7 @@ classdef UR3EC < handle & ParentChild & Tickable
                         new_q = deg2rad([90,-90,0,-90,-90,0]);
                         jac = self.robot.model.jacob0(self.current_q);
                         jaci = inv(jac);
-                        qd = jaci * [self.tracked_object_velocity(1) * PATH_LENGTH self.tracked_object_velocity(2) * PATH_LENGTH -0.1 / PATH_LENGTH 0 0 0]'
+                        qd = jaci * [self.tracked_object_velocity(1) * PATH_LENGTH self.tracked_object_velocity(2) * PATH_LENGTH -self.height_gap / PATH_LENGTH 0 0 0]'
                         disp("------QD------")
                         qdt = qd';
 
@@ -220,7 +222,7 @@ classdef UR3EC < handle & ParentChild & Tickable
 
                     %Modify projected position to have rotation pointing down always and moved
                     %up slightly
-                    projected_position(3,4) = projected_position(3,4) + 0.1;
+                    projected_position(3,4) = projected_position(3,4) + self.height_gap;
                     projected_position(1:3,1:3) = eye(3);
                     projected_position(3,3) = -1; %pointing DOWN
                     moveto = self.robot.model.ikine(projected_position,'q0',self.robot.model.getpos,'mask',[1 1 1 1 1 0],'verbose=2')
@@ -231,7 +233,7 @@ classdef UR3EC < handle & ParentChild & Tickable
 
                     jac = self.robot.model.jacob0(self.robot.model.getpos())
                     jaci = inv(jac)
-                    qd = jaci * [self.tracked_object_velocity(1) * PATH_LENGTH self.tracked_object_velocity(2) * PATH_LENGTH -0.02 0 0 0]'
+                    qd = jaci * [self.tracked_object_velocity(1) * PATH_LENGTH self.tracked_object_velocity(2) * PATH_LENGTH (-self.height_gap / self.path_lengths(2)) * PATH_LENGTH 0 0 0]'
 
                     trajectory = jtraj(self.robot.model.getpos,moveto,PATH_LENGTH,[0 0 0 0 0 0],qd');
                     self.present_queue_robot.add(trajectory);

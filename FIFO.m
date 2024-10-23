@@ -26,7 +26,7 @@ classdef FIFO < handle
         end
 
         function value = is_empty(self)
-            value = isempty(self.queue);
+            value = isempty(self.queue) || isscalar(self.queue); %make code emit new paths if queue is one or we actually mistime trajectory generation by one tick causing stutter
         end
     end
 end
