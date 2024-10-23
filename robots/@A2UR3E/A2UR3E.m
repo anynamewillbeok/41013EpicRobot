@@ -1,4 +1,4 @@
-classdef A2UR3E < RobotBaseClass
+classdef A2UR3E < RobotBaseClassNT
     %% UR3e Universal Robot 3kg payload robot model
     %
     % WARNING: This model has been created by UTS students in the subject
@@ -38,13 +38,15 @@ classdef A2UR3E < RobotBaseClass
         function CreateModel(self)
             %LinearUR5 section
 
-            link(1) = Link([pi     0       0       pi/2    1]); % PRISMATIC Link
-            link(2) = Link([0      0.1599  0       pi/2    0]);
-            link(1).qlim = [-0.8 -0.01];
-            link(2).qlim = [-360 360]*pi/180;
+            % link(1) = Link([pi     0       0       pi/2    1]); % PRISMATIC Link
+            % link(2) = Link([0      0.1599  0       pi/2    0]);
+            % link(1).qlim = [0.8 0.0];
+            % link(2).qlim = [-360 360]*pi/180;
 
-            
-
+            %modded LinearUR5 section because 
+            link(1) = Link('theta',0,'alpha',-pi/2,'prismatic','qlim',[-0.8, -0.06]);
+            link(2) = Link('d',0.1599,'a',0,'alpha',pi/2,'qlim',deg2rad([-360 360]), 'offset',0);
+            link(1).d = 0; %i need to do this otherwise something explodes in RobotBaseClass
 
             %UR3e section
 

@@ -1,13 +1,13 @@
 classdef ConveyorBelt < GenericRenderable
     properties
-        speed = 0.002
+        speed = 0.01
         pc_type = "ConveyorBelt";
     end
 
     methods
         function self = ConveyorBelt(ply_file)
-            self@GenericRenderable(ply_file);
-            self.pts(:,2) = self.pts(:,2) * 0.5;
+            self@GenericRenderable(ply_file)
+            self.pts(:,2) = s
         end
         function tick(self) %All objects attached to the Conveyor Belt will be translated by speed.
             self.number_of_ticks = self.number_of_ticks + 1;

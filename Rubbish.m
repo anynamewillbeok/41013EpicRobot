@@ -1,6 +1,6 @@
 classdef Rubbish < GenericRenderable
     properties
-
+        pc_type = "Rubbish";
     end
 
     methods
