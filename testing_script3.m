@@ -7,9 +7,9 @@ conveyor_belt = ConveyorBelt('ConveyorBeltFixed.PLY');
 
 conveyor_belt.set_transform_4by4(eye(4));
 
-a = Rubbish('HalfSizedRedGreenBrick.ply');
-b = Rubbish('HalfSizedRedGreenBrick.ply');
-c = Rubbish('HalfSizedRedGreenBrick.ply');
+a = Rubbish('HalfSizedRedGreenBrick2.ply');
+b = Rubbish('HalfSizedRedGreenBrick2.ply');
+c = Rubbish('HalfSizedRedGreenBrick2.ply');
 
 dc = DetectionController;
 dc.register(a);
@@ -32,14 +32,14 @@ robot_ur3e = UR3EC(transl(-2,-0.4,0), dc);
 
 
 
-rate = rateControl(30);
-for i = 1:1000
+%rate = rateControl(10);
+for i = 1:100000
     conveyor_belt.tick();
     robot_ur3e.tick();
     conveyor_belt.render();
     robot_ur3e.render();
     drawnow;
-    waitfor(rate);
+    %waitfor(rate);
     
     axis equal
 end

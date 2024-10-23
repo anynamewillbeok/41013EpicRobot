@@ -43,17 +43,22 @@ classdef DetectionCube < GenericRenderable
             local_tri = self.tri;
             local_pts = self.pts;
             local_matrix = self.current_transform;
-            pts_height = height(local_pts);
+            % pts_height = height(local_pts);
+            % 
+            % new_pts = nan(pts_height, 3);
+            % 
+            % for j = 1:pts_height
+            %     thePoint = local_pts(j,:).';
+            %     thePoint(4,1) = 1;
+            %     newPosition = local_matrix * thePoint;
+            %     transposed = newPosition.';
+            %     self.cached_points(j,:) = transposed(1:3);
+            % end
 
-            new_pts = nan(pts_height, 3);
-
-            for j = 1:pts_height
-                thePoint = local_pts(j,:).';
-                thePoint(4,1) = 1;
-                newPosition = local_matrix * thePoint;
-                transposed = newPosition.';
-                self.cached_points(j,:) = transposed(1:3);
-            end
+            local_pts = local_pts';
+            local_pts(4,:) = 1;
+            local_pts = local_matrix * local_pts;
+            self.cached_points = local_pts(1:3,:)';
         end
 
         function render_optional(self)

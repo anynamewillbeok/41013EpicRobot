@@ -24,5 +24,9 @@ classdef FIFO < handle
                 self.pull()
             end
         end
+
+        function value = is_empty(self)
+            value = isempty(self.queue);
+        end
     end
 end

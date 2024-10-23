@@ -1,4 +1,4 @@
-classdef UR3e < RobotBaseClassNT
+classdef UR3eNT < RobotBaseClassNT
     %% UR3e Universal Robot 3kg payload robot model
     %
     % WARNING: This model has been created by UTS students in the subject
@@ -12,7 +12,7 @@ classdef UR3e < RobotBaseClassNT
     
     methods
 %% Constructor
-        function self = UR3e(baseTr,useTool,toolFilename)
+        function self = UR3eNT(baseTr,useTool,toolFilename)
             if nargin < 3
                 if nargin == 2
                     error('If you set useTool you must pass in the toolFilename as well');
