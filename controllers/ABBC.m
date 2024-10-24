@@ -398,9 +398,6 @@ classdef ABBC < handle & ParentChild & Tickable
                     self.attached_child{i}.render(); %render children
                 end
             end
-            
         end
-
-        
     end
 end

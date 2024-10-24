@@ -23,7 +23,7 @@ classdef DetectionCube < GenericRenderable
             objects = self.dco.tracked_objects;
             objects_length = length(objects);
             for i = 1:objects_length
-                hull2 = convhulln(vertcat(self.cached_points, objects{i}.current_transform(1:3,4)'));
+                hull2 = convhull(vertcat(self.cached_points, objects{i}.current_transform(1:3,4)'));
                 if isequal(self.cached_hull, hull2)
                     objects_detected{end+1} = objects{i};
                 end
@@ -57,7 +57,7 @@ classdef DetectionCube < GenericRenderable
             local_pts(4,:) = 1;
             local_pts = local_matrix * local_pts;
             self.cached_points = local_pts(1:3,:)';
-            self.cached_hull = convhulln(self.cached_points);
+            self.cached_hull = convhull(self.cached_points);
         end
 
         function render_optional(self)
