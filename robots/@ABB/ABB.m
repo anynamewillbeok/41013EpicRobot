@@ -43,6 +43,7 @@ classdef ABB < RobotBaseClass
             link(3) = Link('d',-0.25,'a',0.115,'alpha',pi/2);
             link(4) = Link('d',0.8,'a',0,'alpha',pi/2)
             link(5) = Link('d',0,'a',0,'alpha',pi/2);
+            link(6) = Link('d',0.05);
             
             
             
