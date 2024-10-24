@@ -1,4 +1,4 @@
-classdef ABB < RobotBaseClass
+classdef ABB < RobotBaseClassNT
     %% ABB 20kg payload robot model
     %
     % WARNING: This model has been created by UTS students in the subject
@@ -40,9 +40,9 @@ classdef ABB < RobotBaseClass
 
             link(1) = Link('d',0.445,'a',0.1404,'alpha',pi/2,'qlim',deg2rad([-360 360]), 'offset',0);
             link(2) = Link('d',0.25,'a',0.7,'alpha', 0, 'qlim',deg2rad([-360 360]), 'offset',0);
-            link(3) = Link('d',-0.25,'a',0.115,'alpha',pi/2);
-            link(4) = Link('d',0.8,'a',0,'alpha',pi/2)
-            link(5) = Link('d',0,'a',0,'alpha',pi/2);
+            link(3) = Link('d',-0.25,'a',0.115,'alpha',pi/2,'offset',pi/2);
+            link(4) = Link('d',0.8,'a',0,'alpha',pi/2);
+            link(5) = Link('d',0,'a',0,'alpha',pi/2,'offset',pi);
             link(6) = Link('d',0.05);
             
             

@@ -1,6 +1,6 @@
 clear all;
 
-gg = light()
+gg = light();
 gg.Position = [-4, 0, 2];
 
 conveyor_belt = ConveyorBelt('ConveyorBeltFixed.PLY');
