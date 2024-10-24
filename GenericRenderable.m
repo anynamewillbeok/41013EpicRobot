@@ -6,15 +6,14 @@ classdef (Abstract) GenericRenderable < handle & ParentChild & Tickable & matlab
     end
     properties(SetAccess = protected)
         needsRedraw(1,1) logical {} = true;
+        current_transform (4,4) double {mustBeNonNan} = eye(4)
     end
 
     properties(SetAccess = public)
         needsRepatch(1,1) logical {} = false;
     end
     properties
-        current_transform (4,4) double {mustBeNonNan} = eye(4)
-        draw_handle (1,:) matlab.graphics.primitive.Patch {}
-        
+        draw_handle (1,:) matlab.graphics.primitive.Patch {}  
     end
 
     methods

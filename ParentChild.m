@@ -1,6 +1,6 @@
 classdef (Abstract) ParentChild < handle
     properties (GetAccess = public, SetAccess = private)
-        attached_parent (1,1) cell {} = cell(1,1);
+        attached_parent (1,1) cell {} = cell(1,1)
         attached_child (1,:) cell {} = cell(1,0);
     end
 
@@ -26,6 +26,10 @@ classdef (Abstract) ParentChild < handle
                 self.attached_parent{1}.detach_child(self)
             end
             self.attached_parent{1} = [];
+        end
+
+        function status = is_orphan(self)
+            status = isempty(self.attached_parent{1});
         end
     end
     methods(Access = private)

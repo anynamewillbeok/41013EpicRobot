@@ -6,6 +6,7 @@ classdef DetectionCube < GenericRenderable
         detected_objects;
 
         cached_points;
+        cached_hull;
     end
     methods
         function self = DetectionCube(ply_file, dco, transform)
@@ -18,17 +19,13 @@ classdef DetectionCube < GenericRenderable
 
         function objects_detected = tick(self)
             objects_detected = cell.empty;
-            hull = convhulln(self.cached_points);
+            %hull = convhulln(self.cached_points);
             objects = self.dco.tracked_objects;
             objects_length = length(objects);
             for i = 1:objects_length
-                object = objects{i};
-                transform = object.current_transform;
-                coords = transform(1:3,4)';
-                new_coords = vertcat(self.cached_points, coords);
-                hull2 = convhulln(new_coords);
-                if isequal(hull, hull2)
-                    objects_detected{end+1} = object;
+                hull2 = convhulln(vertcat(self.cached_points, objects{i}.current_transform(1:3,4)'));
+                if isequal(self.cached_hull, hull2)
+                    objects_detected{end+1} = objects{i};
                 end
             end    
             self.detected_objects = objects_detected;
@@ -37,6 +34,7 @@ classdef DetectionCube < GenericRenderable
         function set_transform_4by4(self, matrix)
             self.current_transform = matrix;
             self.needsRedraw = true;
+            
 
             %recompute points used for convex hull detection once for speed
 
@@ -59,6 +57,7 @@ classdef DetectionCube < GenericRenderable
             local_pts(4,:) = 1;
             local_pts = local_matrix * local_pts;
             self.cached_points = local_pts(1:3,:)';
+            self.cached_hull = convhulln(self.cached_points);
         end
 
         function render_optional(self)

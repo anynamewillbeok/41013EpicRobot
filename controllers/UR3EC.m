@@ -6,12 +6,10 @@ classdef UR3EC < handle & ParentChild & Tickable
         pc_type = "Robot"
         detection(1,1) DetectionController
         detection_cubes(1,:) DetectionCube
-
         path_lengths = [50,35,50,50,50,50,50,50];
-
         height_gap = 0.2 %Distance buffer to have between jtraj and RMRC when doing downwards motion
-
         projected_object
+        filter_type = "Rubbish";
     end
 
     properties(SetAccess = private)
@@ -45,6 +43,12 @@ classdef UR3EC < handle & ParentChild & Tickable
             cube1_transform = cube1_transform * trscale(0.2, 0.6, 0.5);
             cube1 = DetectionCube("Cube.ply",detection,cube1_transform);
             self.detection_cubes(1) = cube1;
+
+            bin1_transform = transform;
+            bin1_transform = bin1_transform * transl(0,-0.5,-0.5);
+            bin1_transform = bin1_transform * trscale(0.4,0.4,0.5);
+            bin = Bin("Bin.ply",detection, bin1_transform);
+            bin.attach_parent(self);
         end
 
 
@@ -56,14 +60,16 @@ classdef UR3EC < handle & ParentChild & Tickable
                     if self.present_queue_robot.is_empty
                         detected_objects = self.detection_cubes(1).tick();
                         if ~isempty(detected_objects)
-                            disp("Detected object!");
-                            self.tracked_object = detected_objects(1); %select first object
-                            self.tracked_object_info{1} = self.tracked_object{1}.current_transform;
-                            self.state = 1000;
+                            for i = 1:length(detected_objects)
+                                if detected_objects{i}.pc_type == self.filter_type
+                                    disp("Detected Regular Rubbish!");
+                                    self.tracked_object = detected_objects(i); %select first object
+                                    self.tracked_object_info{1} = self.tracked_object{1}.current_transform;
+                                    self.state = 1000;
+                                end
+                            end
                         end
                     end
-                    
-
                     %STAGE 0: Detect rubbish. 
                     %Once detected, emit pathway to being above rubbish's projected
                     %position with ending velocity. Increment state.
@@ -96,6 +102,7 @@ classdef UR3EC < handle & ParentChild & Tickable
                     projected_position = self.tracked_object{1}.current_transform * transl(projected_distance);
                     %render a rubbish here
                     projectedObject = copy(self.tracked_object{1});
+                    projectedObject.pc_type = "Ghost";
                     projectedObject.needsRepatch = true;
                     projectedObject.set_transform_4by4(projected_position);
                     projectedObject.render();
@@ -169,7 +176,32 @@ classdef UR3EC < handle & ParentChild & Tickable
                     %Increment state.
                     if self.present_queue_robot.is_empty
                         PATH_LENGTH = self.path_lengths(5);
-                        new_q = deg2rad([90,0,0,-90,-90,0]);
+                        
+                        %find attached child bin
+                        bin_found = false;
+                        for i = 1:length(self.attached_child)
+                            if self.attached_child{i}.pc_type == "Bin"
+                                bin_location = self.attached_child{i}.current_transform;
+                                bin_found = true;
+                                break
+                            end
+                        end
+                        if ~bin_found
+                            error("UR3EC: Bin not found!");
+                        end
+                        target_location = bin_location * transl(0,0,1); %we want the target to be above the bin
+                        target_location = target_location * trotx(pi); %and also have the end effector Z reversed
+                        %scale target_location rotation vectors to have
+                        %length 1
+                        for i = 1:3
+                            target_location(1:3,i) = target_location(1:3,i)/norm(target_location(1:3,i));
+                        end
+
+                        disp(target_location);
+                        %generate ikine to bin
+                        new_q = self.robot.model.ikine(target_location,'q0',deg2rad([90 -30 30 -90 -90 0]),'mask',[1 1 1 1 1 1],'forceSoln');
+                    
+
                         trajectory = jtraj(self.current_q,new_q,PATH_LENGTH,[0 1 0 0 0 0],[0 0 0 0 0 0]);
                         self.present_queue_robot.add(trajectory);
                         self.state = 5;
@@ -198,10 +230,6 @@ classdef UR3EC < handle & ParentChild & Tickable
                         self.present_queue_robot.add(trajectory);
                         self.state = 0;
                     end
-                       
-
-                        
-                   
                 case 7
                 case 8
                 case 1000
@@ -222,6 +250,7 @@ classdef UR3EC < handle & ParentChild & Tickable
                     projected_position = self.tracked_object_info{2} * transl(projected_distance);
                     %render a rubbish here
                     projectedObject = copy(self.tracked_object{1});
+                    projectedObject.pc_type = "Ghost";
                     projectedObject.needsRepatch = true;
                     projectedObject.set_transform_4by4(projected_position);
                     projectedObject.render();
@@ -259,12 +288,9 @@ classdef UR3EC < handle & ParentChild & Tickable
             
             
             num_children = length(self.attached_child);
-            
-
             for i = 1:num_children
                 self.attached_child{i}.tick(); %tick children
             end
-
         end
 
         function render(self)
@@ -283,7 +309,7 @@ classdef UR3EC < handle & ParentChild & Tickable
             %ONLY move objects classified as "Rubbish" to the end effector!
             for i = 1:num_children 
                 switch self.attached_child{i}.pc_type
-                    case "Rubbish"
+                    case self.filter_type
                         self.attached_child{i}.set_transform_4by4(c);
                 end
             end
