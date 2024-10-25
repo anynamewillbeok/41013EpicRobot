@@ -295,33 +295,24 @@ classdef UR3EC < handle & ParentChild & Tickable
 
         function render(self)
             self.detection_cubes(1).render();
-            
             %disp("UR3EC: Render code stubbed");
             robot_q = self.present_queue_robot.pull();
-            %clawQ = self.present_queue_claw.pull()
-
-            
+            %clawQ = self.present_queue_claw.pull()  
             %teleport attached children to end effector
-
-            num_children = length(self.attached_child);
-            
             %ONLY move objects classified as "Rubbish" to the end effector!
-
-            
-            %claw rendering code idk
-
-            
-            self.robot.model.animate(robot_q); 
-            c = self.robot.model.fkine(robot_q);
-            if ~isempty(self.attached_child)
-                for i = 1:length(self.attached_child)
-                    if self.attached_child{i}.pc_type == self.filter_type
-                        self.attached_child{i}.set_transform_4by4(c); %teleport filtered objects to end effector
+            if robot_q ~= self.current_q | self.number_of_ticks == 1  %only animate if needs to be, or rendering for first time
+                self.robot.model.animate(robot_q);
+                c = self.robot.model.fkine(robot_q);
+                if ~isempty(self.attached_child)
+                    for i = 1:length(self.attached_child)
+                        if self.attached_child{i}.pc_type == self.filter_type
+                            self.attached_child{i}.set_transform_4by4(c); %teleport filtered objects to end effector
+                        end
+                        self.attached_child{i}.render(); %render children
                     end
-                    self.attached_child{i}.render(); %render children 
                 end
+                self.current_q = robot_q;
             end
-            self.current_q = robot_q;
         end  
     end
 end
