@@ -35,21 +35,14 @@ classdef (Abstract) GenericRenderable < handle & ParentChild & Tickable & matlab
         end
         %% Render Object
         function return_object = render(self)
-
             %if ~isnan(self.draw_handle)
             
             %end
-
-            
-
             if self.needsRedraw
                 % try
                 %     delete(self.draw_handle)
                 % catch
                 % end
-
-
-
                 local_tri = self.tri;
                 local_pts = self.pts;
                 local_matrix = self.current_transform;
