@@ -5,6 +5,10 @@ classdef DetectionCube < GenericRenderable
         pc_type = "DetectionCube";
         detected_objects;
 
+        objects_detected_count = 1;
+
+        box_limits(2,3) double
+
         cached_points;
         cached_hull;
     end
@@ -18,16 +22,24 @@ classdef DetectionCube < GenericRenderable
         end
 
         function objects_detected = tick(self)
-            objects_detected = cell.empty;
+            objects_detected = cell(1,self.objects_detected_count); 
+            objects_detected_ticker = 1;
             %hull = convhulln(self.cached_points);
             objects = self.dco.tracked_objects;
             objects_length = length(objects);
             for i = 1:objects_length
-                hull2 = convhull(vertcat(self.cached_points, objects{i}.current_transform(1:3,4)'));
-                if isequal(self.cached_hull, hull2)
-                    objects_detected{end+1} = objects{i};
+                %hull2 = convhull(vertcat(self.cached_points, objects{i}.current_transform(1:3,4)'));
+                point_pos = objects{i}.current_transform;
+                if point_pos(1,4) >= self.box_limits(1,1) && point_pos(1,4) <= self.box_limits(2,1) && point_pos(2,4) >= self.box_limits(1,2) && point_pos(2,4) <= self.box_limits(2,2) && point_pos(3,4) >= self.box_limits(1,3) && point_pos(3,4) <= self.box_limits(2,3) 
+                %if isequal(self.cached_hull, hull2)
+                    objects_detected{objects_detected_ticker} = objects{i};
+                    objects_detected_ticker = objects_detected_ticker + 1;
                 end
             end    
+            if self.objects_detected_count ~= objects_detected_ticker - 1
+                objects_detected(cellfun(@numel,objects_detected)==0) = [];
+                self.objects_detected_count = objects_detected_ticker - 1;
+            end
             self.detected_objects = objects_detected;
         end
 
@@ -58,12 +70,22 @@ classdef DetectionCube < GenericRenderable
             local_pts = local_matrix * local_pts;
             self.cached_points = local_pts(1:3,:)';
             self.cached_hull = convhull(self.cached_points);
+
+            self.box_limits(1,1) = min(local_pts(1,:)); %min x
+            self.box_limits(2,1) = max(local_pts(1,:)); %max x
+            self.box_limits(1,2) = min(local_pts(2,:)); %min y
+            self.box_limits(2,2) = max(local_pts(2,:)); %max y
+            self.box_limits(1,3) = min(local_pts(3,:)); %min z
+            self.box_limits(2,3) = max(local_pts(3,:)); %max z
+
+            %disp(self.box_limits);
+
+
         end
 
         function render_optional(self)
             self.draw_handle.FaceColor = 'magenta';
             self.draw_handle.FaceAlpha = 0.3;
-
         end
     end
 end
