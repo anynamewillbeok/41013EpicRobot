@@ -67,7 +67,7 @@ classdef (Abstract) GenericRenderable < handle & ParentChild & Tickable & matlab
                 new_pts = local_pts(1:3,:)';
                 %End of new code
 
-                hold on
+                %hold on
                 if isempty(self.draw_handle) | self.needsRepatch
                     self.draw_handle = patch('Faces',local_tri,'Vertices',new_pts, 'FaceColor', [0 0.1 0.3], 'EdgeColor', 'none');
                     self.needsRepatch = false;
@@ -78,7 +78,7 @@ classdef (Abstract) GenericRenderable < handle & ParentChild & Tickable & matlab
                 self.needsRedraw = false;     
                 return_object = self.draw_handle;
                 self.render_optional();
-                hold off
+                %hold off
             end
 
             if ~isempty(self.attached_child)

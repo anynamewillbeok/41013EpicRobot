@@ -75,11 +75,13 @@ for i = 1:3000
     robot_ur3e2.tick();
     robot_ur3e3.tick();
     robot_ur3e4.tick();
+    hold on;
     conveyor_belt.render();
     robot_ur3e.render();
     robot_ur3e2.render();
     robot_ur3e3.render();
     robot_ur3e4.render();
+    hold off;
 
     drawnow;
     %waitfor(rate);
