@@ -2,7 +2,7 @@ classdef ABBC < handle & ParentChild & Tickable
     properties
         robot 
         present_queue_robot FIFO %Present queues
-        present_queue_claw FIFO
+        
         pc_type = "Robot"
         detection(1,1) DetectionController
         detection_cubes(1,:) DetectionCube
@@ -30,14 +30,16 @@ classdef ABBC < handle & ParentChild & Tickable
     end
 
     methods
-        function self = ABBC(transform, detection)
+        function self = ABBC(transform, detection, ultimate)
             self.robot = ABB(transform);
             self.detection = detection;
             self.robot.model.animate(self.home_position);
             self.current_q = self.home_position;
             
-            self.present_queue_robot = FIFO(length(self.robot.model.links));
-            self.present_queue_robot.add(self.home_position);
+            self.present_queue_robot = FIFO(length(self.robot.model.links), self);
+            self.present_queue_robot.attach_parent(ultimate);
+            self.present_queue_robot.force_add(self.home_position);
+            
 
             %starting Q positions
             %Q = [0,0,0]
@@ -50,7 +52,7 @@ classdef ABBC < handle & ParentChild & Tickable
             cube1_transform = transform;
             cube1_transform = cube1_transform * transl(0, 0.8, 0);
             cube1_transform = cube1_transform * trscale(0.2, 0.6, 0.5);
-            cube1 = DetectionCube("Cube.ply",detection,cube1_transform);
+            cube1 = DetectionCube(detection,cube1_transform);
             self.detection_cubes(1) = cube1;
 
             bin1_transform = transform;
@@ -58,6 +60,8 @@ classdef ABBC < handle & ParentChild & Tickable
             bin1_transform = bin1_transform * trscale(1,1,1);
             bin = Bin("Bin.ply",detection, bin1_transform);
             bin.attach_parent(self);
+
+            self.render();
         end
 
 
@@ -369,7 +373,7 @@ classdef ABBC < handle & ParentChild & Tickable
         end
 
         function render(self)
-            self.detection_cubes(1).render();
+            %self.detection_cubes(1).render();
             %disp("UR3EC: Render code stubbed");
             robot_q = self.present_queue_robot.pull();
             %clawQ = self.present_queue_claw.pull()  
@@ -389,5 +393,38 @@ classdef ABBC < handle & ParentChild & Tickable
                 self.current_q = robot_q;
             end
         end 
+
+        function boxes = build_detection_cubes(self, q)
+            thickness = [1 1.5 3 1 1 1];
+            scale_y = [4 2.5 2.7 7 1 1];
+            mask = [0 1 1 1 1 0];
+            shift_z = [0 -1 -0.5 -0.15 -3 0];
+            shift_x = [0 0 0 0 0 0];
+            shift_y = [0 0 0 -0.25 0 0];
+            scale_z = [1 1.25 2.7 0.2 1 1];
+            scale_x = [4 1.25 2.7 0.2 1 1];
+            boxes = cell(1,6);
+            links = self.robot.model.links;
+            num_links = length(links);
+            [~, transforms] = self.robot.model.fkine(q);
+            transforms = transforms.T;
+            %scale transforms
+            scalelinks = copy(links);
+            for i = 1:num_links
+                if links(i).d == 0 & links(i).a == 0
+                    scalelinks(i).d = 0.1;
+                    scalelinks(i).a = 0.1;
+                elseif links(i).d == 0
+                    scalelinks(i).d = links(i).a * thickness(i);
+                elseif links(i).a == 0
+                    scalelinks(i).a = links(i).d * thickness(i);
+                end
+
+                dc = DetectionController; %fake controller
+
+                transforms(:,:,i) = transforms(:,:,i) * transl((-links(i).a)/2,0,links(max([i-1 1])).d * mask(i) * 0.4) * trscale(abs(scalelinks(i).a) * 1.2 * scale_x(i),scale_y(i) * 0.1,abs(scalelinks(i).d) * 1.2 * scale_z(i)) * transl(shift_x(i),shift_y(i),0.5 * mask(i) + shift_z(i));
+                boxes{i} = DetectionCube(dc,transforms(:,:,i));
+            end
+        end
     end
 end

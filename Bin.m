@@ -12,7 +12,7 @@ classdef Bin < GenericRenderable
             self@GenericRenderable(ply_file);
             self.dco = dco;
             %create Detection Cube just above bin      
-            self.dcube = DetectionCube('Cube.ply',dco,transform * transl(0,0,0.61) * trscale(0.95,0.95,1.2));
+            self.dcube = DetectionCube(dco,transform * transl(0,0,0.61) * trscale(0.95,0.95,1.2));
             self.current_transform = transform;
             self.dcube.attach_parent(self);
         end

@@ -14,10 +14,10 @@ classdef DetectionCube < GenericRenderable
         cached_points;
     end
     methods
-        function self = DetectionCube(ply_file, dco, transform)
+        function self = DetectionCube(dco, transform)
 
             %call GenericRenderable constructor
-            self@GenericRenderable(ply_file);
+            self@GenericRenderable("0");
             self.dco = dco;
             self.set_transform_4by4(transform);
         end
@@ -34,7 +34,7 @@ classdef DetectionCube < GenericRenderable
                 if point_pos(1,4) >= self.box_limits(1,1) && point_pos(1,4) <= self.box_limits(2,1) && point_pos(2,4) >= self.box_limits(1,2) && point_pos(2,4) <= self.box_limits(2,2) && point_pos(3,4) >= self.box_limits(1,3) && point_pos(3,4) <= self.box_limits(2,3) 
                 %if isequal(self.cached_hull, hull2)
                     %If an object is inside the GREEN bounding box: perform
-                    %inverse transformation, check if between -0.5 and 0.5
+                    %inverse transformatigon, check if between -0.5 and 0.5
                     inverse_point_pos = self.transform_inverse * point_pos;
                     if all(inverse_point_pos(1:3,4) >= -0.5 & inverse_point_pos(1:3,4) <= 0.5)
                         objects_detected{objects_detected_ticker} = objects{i};
@@ -47,6 +47,25 @@ classdef DetectionCube < GenericRenderable
                 self.objects_detected_count = objects_detected_ticker - 1;
             end
             self.detected_objects = objects_detected;
+        end
+
+        function intersects = check_dc(self, other_cube)
+            arguments
+                self
+                other_cube DetectionCube
+            end
+            intersects = false;
+
+            for i = 1:8 %%potential optimization: somehow check all points at the same time
+                %point_pos = other_cube.cached_points(i,:);
+                if other_cube.cached_points(i,1) >= self.box_limits(1,1) && other_cube.cached_points(i,1) <= self.box_limits(2,1) && other_cube.cached_points(i,2) >= self.box_limits(1,2) && other_cube.cached_points(i,2) <= self.box_limits(2,2) && other_cube.cached_points(i,3) >= self.box_limits(1,3) && other_cube.cached_points(i,3) <= self.box_limits(2,3) 
+                    inverse_point_pos = self.transform_inverse * transl(other_cube.cached_points(i,1),other_cube.cached_points(i,2),other_cube.cached_points(i,3));
+                    if all(inverse_point_pos(1:3,4) >= -0.5 & inverse_point_pos(1:3,4) <= 0.5)
+                        intersects = true;
+                        break
+                    end
+                end
+            end
         end
 
         function set_transform_4by4(self, matrix)

@@ -21,10 +21,13 @@ classdef (Abstract) GenericRenderable < handle & ParentChild & Tickable & matlab
         function self = GenericRenderable(ply_file)
             % Read the ply file
             pc_type = "GenericRenderable";
-            
-            [self.tri, self.pts] = plyread(ply_file, 'tri');
-            
-            
+
+            if ply_file == "0" %load data for a generic cube if user does not with to supply model data
+                self.tri = [8 6 5;7 1 6;2 3 1;4 5 3;1 5 6;7 4 2;8 7 6;7 2 1;2 4 3;4 8 5;1 3 5;7 8 4];
+                self.pts = [0.5 0.5 -0.5;0.5 0.5 0.5;0.5 -0.5 -0.5;0.5 -0.5 0.5;-0.5 -0.5 -0.5;-0.5 0.5 -0.5;-0.5 0.5 0.5;-0.5 -0.5 0.5];
+            else
+                [self.tri, self.pts] = plyread(ply_file, 'tri');
+            end    
         end
         %% Set transform for object
         function set_transform_4by4(self, matrix)
@@ -38,7 +41,7 @@ classdef (Abstract) GenericRenderable < handle & ParentChild & Tickable & matlab
             %if ~isnan(self.draw_handle)
             
             %end
-            if self.needsRedraw
+            if self.needsRedraw | ~isvalid(self.draw_handle)
                 % try
                 %     delete(self.draw_handle)
                 % catch

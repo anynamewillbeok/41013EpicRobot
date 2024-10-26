@@ -1,6 +1,7 @@
 classdef UR3EC < handle & ParentChild & Tickable
     properties
         robot 
+        base_transform;
         present_queue_robot FIFO %Present queues
         present_queue_claw FIFO
         pc_type = "Robot"
@@ -21,14 +22,17 @@ classdef UR3EC < handle & ParentChild & Tickable
     end
 
     methods
-        function self = UR3EC(transform, detection)
+        function self = UR3EC(transform, detection, ultimate)
             self.robot = UR3eNT(transform);
+            self.base_transform = transform;
             self.detection = detection;
             self.robot.model.animate(deg2rad([90,-120,-60,-90,90,0]));
             self.current_q = deg2rad([90,-120,-60,-90,90,0]);
             
-            self.present_queue_robot = FIFO(length(self.robot.model.links));
-            self.present_queue_robot.add(deg2rad([90,-120,-60,-90,90,0]));
+            self.present_queue_robot = FIFO(length(self.robot.model.links), self);
+            self.present_queue_robot.attach_parent(ultimate);
+            self.present_queue_robot.force_add(deg2rad([90,-120,-60,-90,90,0]));
+            
 
             %starting Q positions
             %Q = [0,0,0]
@@ -41,7 +45,7 @@ classdef UR3EC < handle & ParentChild & Tickable
             cube1_transform = transform;
             cube1_transform = cube1_transform * transl(0, 0.4, 0);
             cube1_transform = cube1_transform * trscale(0.2, 0.6, 0.5);
-            cube1 = DetectionCube("Cube.ply",detection,cube1_transform);
+            cube1 = DetectionCube(detection,cube1_transform);
             self.detection_cubes(1) = cube1;
 
             bin1_transform = transform;
@@ -49,6 +53,8 @@ classdef UR3EC < handle & ParentChild & Tickable
             bin1_transform = bin1_transform * trscale(0.4,0.4,0.5);
             bin = Bin("Bin.ply",detection, bin1_transform);
             bin.attach_parent(self);
+
+            self.render();
         end
 
 
@@ -266,17 +272,17 @@ classdef UR3EC < handle & ParentChild & Tickable
                     projected_position(3,4) = projected_position(3,4) + self.height_gap;
                     projected_position(1:3,1:3) = eye(3);
                     projected_position = projected_position * trotx(pi); %pointing DOWN
-                    moveto = self.robot.model.ikine(projected_position,'q0',self.robot.model.getpos,'mask',[1 1 1 1 1 1],'verbose=2');
+                    moveto = self.robot.model.ikine(projected_position,'q0',self.robot.model.getpos,'mask',[1 1 1 1 1 1],'verbose=2','tol',0.02,'forceSoln');
                     
 
                     %generate RMRC to get proper joint velocity to smoothly
                     %move into downwards dropdown step
 
-                    jac = self.robot.model.jacob0(self.robot.model.getpos());
+                    jac = self.robot.model.jacob0(moveto);
                     jaci = inv(jac);
                     qd = jaci * [self.tracked_object_velocity(1) * PATH_LENGTH self.tracked_object_velocity(2) * PATH_LENGTH (-self.height_gap / self.path_lengths(2)) * PATH_LENGTH 0 0 0]';
 
-                    trajectory = jtraj(self.robot.model.getpos,moveto,PATH_LENGTH,[0 0 0 0 0 0],qd');
+                    trajectory = jtraj(self.robot.model.getpos,moveto,PATH_LENGTH,[0 0 0 0 0 0],qd);
                     self.present_queue_robot.add(trajectory);
 
                     self.projected_object = projectedObject;
@@ -294,7 +300,7 @@ classdef UR3EC < handle & ParentChild & Tickable
         end
 
         function render(self)
-            self.detection_cubes(1).render();
+            %self.detection_cubes(1).render();
             %disp("UR3EC: Render code stubbed");
             robot_q = self.present_queue_robot.pull();
             %clawQ = self.present_queue_claw.pull()  
@@ -313,6 +319,33 @@ classdef UR3EC < handle & ParentChild & Tickable
                 end
                 self.current_q = robot_q;
             end
-        end  
+        end
+
+        function boxes = build_detection_cubes(self, q)
+            thickness = [1 0.33 0.33 1 1 1];
+            mask = [0 1 1 1 1 0];
+            shift = [0 0 0 0 -1 0];
+            boxes = cell(1,6);
+            links = self.robot.model.links;
+            num_links = length(links);
+            [~, transforms] = self.robot.model.fkine(q);
+            transforms = transforms.T;
+            %scale transforms
+            for i = 1:num_links
+
+                scalelinks = copy(links);
+
+                if links(i).a == 0
+                    scalelinks(i).a = links(i).d * thickness(i);
+                elseif links(i).d == 0
+                    scalelinks(i).d = links(i).a * thickness(i);
+                end
+
+                dc = DetectionController; %fake controller
+
+                transforms(:,:,i) = transforms(:,:,i) * transl((-links(i).a)/2,0,links(max([i-1 1])).d * mask(i) * 0.4) * trscale(abs(scalelinks(i).a) * 1.2,0.1,abs(scalelinks(i).d) * 1.2) * transl(0,0,0.5 * mask(i) + shift(i));
+                boxes{i} = DetectionCube(dc,transforms(:,:,i));
+            end
+        end
     end
 end
