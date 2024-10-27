@@ -35,6 +35,11 @@ classdef UltimateCollisionChecker < handle & ParentChild
              %row 1 corresponds to the "active" region, also why q
                 %array is one higher than longestFIFO
 
+            if longestFIFO > 40
+
+            end
+            
+
 
 
             %STAGE 1: IMPORT DATA
@@ -82,7 +87,7 @@ classdef UltimateCollisionChecker < handle & ParentChild
                                 if ~collision
                                     for CubeSelector = 1:length(ultimate_dcube_array{rowSelector,i})
                                         if ~collision
-                                            for CubeSelectorTarget = 1:length(ultimate_dcube_array{rowSelector,i})
+                                            for CubeSelectorTarget = 1:length(ultimate_dcube_array{rowSelector,j})
                                                 if ~collision
                                                     collision_test = ultimate_dcube_array{rowSelector,i}{1,CubeSelector}.check_dc(ultimate_dcube_array{rowSelector,j}{1,CubeSelectorTarget});
                                                     if collision_test
