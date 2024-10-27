@@ -35,10 +35,11 @@ light('Style', 'local', 'Position', [-1.5 0 2], 'Parent', gca);
 drawnow;
 
 % Initialize the robots with detection controller
-robot_ur3e = UR3EC(transl(-0.5, -0.4, 0), dc);
-robot_ur3e2 = UR3EC(transl(-1.0, -0.4, 0), dc);
-robot_ur3e3 = UR3EC(transl(-1.5, -0.4, 0), dc);
-robot_ur3e4 = UR3EC(transl(-2.0, -0.4, 0), dc);
+ucc = UltimateCollisionChecker;
+robot_ur3e = UR3EC(transl(-0.5, -0.4, 0), dc, ucc);
+robot_ur3e2 = UR3EC(transl(-1.0, -0.4, 0), dc, ucc);
+robot_ur3e3 = UR3EC(transl(-1.5, -0.4, 0), dc, ucc);
+robot_ur3e4 = UR3EC(transl(-2.0, -0.4, 0), dc, ucc);
 
 RandomBrickArray = createArray(0, 0, 'cell');
 
@@ -61,7 +62,11 @@ function triggerEStop()
     eStop_triggered = true;
 end
 
+times = createArray(1,3000,"double");
+i = 0;
+
 for i = 1:3000
+    tickStart = tic;
     global eStop_triggered
     if eStop_triggered
         break;
@@ -100,9 +105,13 @@ for i = 1:3000
     robot_ur3e3.render();
     robot_ur3e4.render();
     hold off;
-
     drawnow;
+    tickEnd = toc(tickStart);
+    times(i) = tickEnd;
 end
+
+figure(2);
+plot(times);
 
 % closes UI
 close(f);

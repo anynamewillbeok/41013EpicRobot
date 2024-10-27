@@ -305,7 +305,7 @@ classdef UR3EC < handle & ParentChild & Tickable
                     projected_position(3,4) = projected_position(3,4) + self.height_gap;
                     projected_position(1:3,1:3) = eye(3);
                     projected_position = projected_position * trotx(pi); %pointing DOWN
-                    moveto = self.robot.model.ikine(projected_position,'q0',self.robot.model.getpos,'mask',[1 1 1 1 1 1],'verbose=2','tol',0.02,'forceSoln');
+                    moveto = self.robot.model.ikine(projected_position,'q0',self.robot.model.getpos,'mask',[1 1 1 1 1 1],'tol',0.02,'forceSoln');
                     
 
                     %generate RMRC to get proper joint velocity to smoothly

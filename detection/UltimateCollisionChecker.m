@@ -6,7 +6,7 @@ classdef UltimateCollisionChecker < handle & ParentChild
     methods
         function collision = check_collision(self, calling_q_matrix, calling_fifo)
 
-            tic;
+            %tic;
 
             % theProfiler = false;
             % if height(calling_q_matrix) > 40
@@ -150,7 +150,7 @@ classdef UltimateCollisionChecker < handle & ParentChild
             %      profile viewer
             % end
 
-            toc;
+            %toc;
             
             return
         end

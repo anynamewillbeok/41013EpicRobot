@@ -37,10 +37,10 @@ light('Style','local','Position',[ -1.5 0 2],'Parent',gca);
 
 drawnow;
 
+
+
+
 ucc = UltimateCollisionChecker;
-
-
-
 robot_ur3e = UR3EC(transl(-1.0,-0.4,0), dc, ucc);
 robot_ur3e2 = UR3EC(transl(-1.5,-0.4,0), dc, ucc);
 robot_ur3e3 = UR3EC(transl(-2.0,-0.4,0), dc, ucc);
