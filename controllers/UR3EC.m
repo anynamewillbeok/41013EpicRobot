@@ -11,6 +11,7 @@ classdef UR3EC < handle & ParentChild & Tickable
         height_gap = 0.2 %Distance buffer to have between jtraj and RMRC when doing downwards motion
         projected_object
         filter_type = "Rubbish";
+        linkdata(1,6) Link
     end
 
     properties(SetAccess = private)
@@ -28,6 +29,8 @@ classdef UR3EC < handle & ParentChild & Tickable
             self.detection = detection;
             self.robot.model.animate(deg2rad([90,-120,-60,-90,90,0]));
             self.current_q = deg2rad([90,-120,-60,-90,90,0]);
+
+            self.linkdata = self.robot.model.links;
             
             self.present_queue_robot = FIFO(length(self.robot.model.links), self);
             self.present_queue_robot.attach_parent(ultimate);
@@ -326,7 +329,7 @@ classdef UR3EC < handle & ParentChild & Tickable
             mask = [0 1 1 1 1 0];
             shift = [0 0 0 0 -1 0];
             boxes = cell(1,6);
-            links = self.robot.model.links;
+            links = self.linkdata;
             num_links = length(links);
             [~, transforms] = self.robot.model.fkine(q);
             transforms = transforms.T;
@@ -340,11 +343,40 @@ classdef UR3EC < handle & ParentChild & Tickable
                 elseif links(i).d == 0
                     scalelinks(i).d = links(i).a * thickness(i);
                 end
-
                 dc = DetectionController; %fake controller
+                boxes{i} = DetectionCube(dc, transforms(:,:,i) * transl((-links(i).a)/2,0,links(max([i-1 1])).d * mask(i) * 0.4) * trscale(abs(scalelinks(i).a) * 1.2,0.1,abs(scalelinks(i).d) * 1.2) * transl(0,0,0.5 * mask(i) + shift(i)));
+                 %= DetectionCube(dc,transforms(:,:,i));
+            end
+        end
+    end
 
-                transforms(:,:,i) = transforms(:,:,i) * transl((-links(i).a)/2,0,links(max([i-1 1])).d * mask(i) * 0.4) * trscale(abs(scalelinks(i).a) * 1.2,0.1,abs(scalelinks(i).d) * 1.2) * transl(0,0,0.5 * mask(i) + shift(i));
-                boxes{i} = DetectionCube(dc,transforms(:,:,i));
+    methods(Static)
+
+        function boxes = build_detection_cubes_static(self, q, links)
+            thickness = [1 0.33 0.33 1 1 1];
+            mask = [0 1 1 1 1 0];
+            shift = [0 0 0 0 -1 0];
+            boxes = cell(1,6);
+            num_links = length(links); 
+            %[~, transforms] = self.robot.model.fkine(q); %Cant use fkine from our robot here, SerialLink hates being parallelised!
+            %reimplement fkine here to get current transforms
+            
+
+            %transforms should be defined somewhere BEFORE this
+            transforms = transforms.T;
+            %scale transforms
+            for i = 1:num_links
+
+                scalelinks = copy(links);
+
+                if links(i).a == 0
+                    scalelinks(i).a = links(i).d * thickness(i);
+                elseif links(i).d == 0
+                    scalelinks(i).d = links(i).a * thickness(i);
+                end
+                dc = DetectionController; %fake controller
+                boxes{i} = DetectionCube(dc, transforms(:,:,i) * transl((-links(i).a)/2,0,links(max([i-1 1])).d * mask(i) * 0.4) * trscale(abs(scalelinks(i).a) * 1.2,0.1,abs(scalelinks(i).d) * 1.2) * transl(0,0,0.5 * mask(i) + shift(i)));
+                 %= DetectionCube(dc,transforms(:,:,i));
             end
         end
     end

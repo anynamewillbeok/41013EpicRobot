@@ -5,6 +5,13 @@ classdef UltimateCollisionChecker < handle & ParentChild
 %Attached Children are all meant to be Robot Q position FIFO queues
     methods
         function collision = check_collision(self, calling_q_matrix, calling_fifo)
+
+            % theProfiler = false;
+            % if height(calling_q_matrix) > 40
+            %     profile on -timestamp -historysize 10000000 -timer performance
+            %     theProfiler = true;
+            % end
+            % 
             %figure out which child called the function
             num_children = length(self.attached_child);
             calling_fifo_index = 0;
@@ -29,6 +36,8 @@ classdef UltimateCollisionChecker < handle & ParentChild
                 end
             end
             longestFIFO = max(fifo_lengths);
+
+            
 
             ultimate_q_array = cell(longestFIFO, num_children);
             ultimate_dcube_array = cell(longestFIFO, num_children);
@@ -62,36 +71,45 @@ classdef UltimateCollisionChecker < handle & ParentChild
                 ultimate_q_array(:,i) = fifo_data;
             end
             %STAGE 2: GENERATE BOXES
+            children = self.attached_child
+            % 
+            linkdata = cell(1,num_children);
             for i = 1:num_children
+                linkdata{i} = children{i}.assigned_robot.linkdata;
+            end
+
+            parfor i = 1:num_children
                 %generate boxes for Q array on one robot
                 %get robot controller
-                controller = self.attached_child{i}.assigned_robot;
+                controller = children{i}.assigned_robot;
                 for j = 1:longestFIFO
-                    cubes = controller.build_detection_cubes(ultimate_q_array{j,i});
+                    cubes = controller.build_detection_cubes_static(ultimate_q_array{j,i});
                     ultimate_dcube_array{j,i} = cubes;
                 end
             end
 
-            collision = false;
+            
             %STAGE 3: THE LARGE CUBE COLLIDER
-            % theProfiler = false;
-            % if longestFIFO > 40
-            %     profile on -timestamp -historysize 10000000 -timer performance
-            %     theProfiler = true;
-            % end
-            for rowSelector = 1:height(ultimate_dcube_array)
-                if ~collision
+
+            theheight2 = height(ultimate_dcube_array)
+
+            collisiontest = createArray(theheight2,1,"logical");
+            
+            for rowSelector = 1:theheight2
+                thecollision = false;
+                if ~thecollision
                     for i = 1:num_children
-                        if ~collision
+                        if ~thecollision
                             for j = i+1:num_children
-                                if ~collision
+                                if ~thecollision
                                     for CubeSelector = 1:length(ultimate_dcube_array{rowSelector,i})
-                                        if ~collision
+                                        if ~thecollision
                                             for CubeSelectorTarget = 1:length(ultimate_dcube_array{rowSelector,j})
-                                                if ~collision
+                                                if ~thecollision
                                                     collision_test = ultimate_dcube_array{rowSelector,i}{1,CubeSelector}.check_dc(ultimate_dcube_array{rowSelector,j}{1,CubeSelectorTarget});
                                                     if collision_test
-                                                        collision = true;
+                                                        collisiontest(rowSelector) = true;
+                                                        %collision = true;
                                                         self.drawCollisionData(rowSelector, i, CubeSelector, j, CubeSelectorTarget, ultimate_dcube_array);
                                                         error("Robots will collide.");       
                                                     end
@@ -105,9 +123,10 @@ classdef UltimateCollisionChecker < handle & ParentChild
                     end
                 end
             end
+            collision = any(collisiontest);
 
             % if theProfiler
-            %     profile viewer
+            %      profile viewer
             % end
             
             return
