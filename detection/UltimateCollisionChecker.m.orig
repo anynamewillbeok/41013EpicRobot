@@ -6,8 +6,6 @@ classdef UltimateCollisionChecker < handle & ParentChild
     methods
         function collision = check_collision(self, calling_q_matrix, calling_fifo)
 
-            tic;
-
             % theProfiler = false;
             % if height(calling_q_matrix) > 40
             %     profile on -timestamp -historysize 10000000 -timer performance
@@ -65,7 +63,7 @@ classdef UltimateCollisionChecker < handle & ParentChild
                     fifo_data(1:data_length,1) = num2cell(data,2);
                     fifo_data(data_length + 1:data_length + height(calling_q_matrix),1) = num2cell(calling_q_matrix,2);
                     %Pad if data too short
-                    overrun = longestFIFO - height(fifo_data);
+                    overrun = longestFIFO - height(fifo_data)
                     if overrun > 0
                         fifo_data = padarray(fifo_data,[overrun 0],'replicate','post');
                     end
@@ -73,89 +71,76 @@ classdef UltimateCollisionChecker < handle & ParentChild
                 ultimate_q_array(:,i) = fifo_data;
             end
             %STAGE 2: GENERATE BOXES
-            %children = self.attached_child;
+            children = self.attached_child;
             % 
-            %STAGE 2.-1: BUILD PARALLELISATION DATA
-            % children = self.attached_child;
-            % linkdata = cell(1,num_children);
-            % robot_base_transform = cell(1,num_children);
-            % robot = cell(1,num_children);
-            % robot_p_dc_t = cell(1,num_children);
-            % for i = 1:num_children
-            %     linkdata{i} = children{i}.assigned_robot.linkdata;
-            %     robot_base_transform{i} = children{i}.assigned_robot.base_transform;
-            %     robot{i} = children{i}.assigned_robot;
-            %     robot_p_dc_t{i} = children{i}.assigned_robot.p_dc_t;
-            % end
-
-            % addAttachedFiles(gcp,["Link.m" "transl.m" "trscale.m"]);
-
-            %ticBytes;
-            
+            linkdata = cell(1,num_children);
             for i = 1:num_children
-            %for i = 1:num_children %tried to use parfor here, unfortunately has massive overhead so we just use normal for
-                %generate boxes for Q array on one robot
-                for j = 1:longestFIFO
-                    ultimate_dcube_array{j,i} = self.attached_child{i}.assigned_robot.build_detection_cubes(ultimate_q_array{j,i});
-                    %ultimate_dcube_array{j,i} = build_detection_cubes_static(ultimate_q_array{j,i}, linkdata{i}, robot_base_transform{i}, robot_p_dc_t{i}) %Use if you want to try parallelisation
-                    %ultimate_dcube_array{j,i} = cubes;
-                end
+                linkdata{i} = children{i}.assigned_robot.linkdata;
             end
 
-            %tocBytes;
+            parfor i = 1:num_children
+                %generate boxes for Q array on one robot
+                %get robot controller
+                controller = children{i}.assigned_robot;
+                for j = 1:longestFIFO
+                    cubes = controller.build_detection_cubes_special(ultimate_q_array{j,i});
+                    ultimate_dcube_array{j,i} = cubes;
+                end
+            end
 
             
             %STAGE 3: THE LARGE CUBE COLLIDER
 
-            theheight2 = height(ultimate_dcube_array);
+            theheight2 = height(ultimate_dcube_array)
 
-            %collisiontest = createArray(theheight2,1,"logical");
-            thecollision = false;
-            collision = false;
+            
+
+            collisiontest = createArray(theheight2,1,"logical");
             
             for rowSelector = 1:theheight2
-                sliced_ultimate_dcube_array = ultimate_dcube_array(rowSelector,:);
                 thecollision = false;
                 if ~thecollision
                     for i = 1:num_children
-                        %if ~thecollision
-                        for j = i+1:num_children
-                            %if ~thecollision
-                            for CubeSelector = 1:length(sliced_ultimate_dcube_array{i})
-                                %if ~thecollision
-                                for CubeSelectorTarget = 1:length(sliced_ultimate_dcube_array{j})
-                                    %if ~thecollision
-                                    collision_test = sliced_ultimate_dcube_array{i}{CubeSelector}.check_dc(sliced_ultimate_dcube_array{j}{CubeSelectorTarget});
-                                    if collision_test
-                                        thecollision = true;
-                                        %collisiontest(rowSelector) = true;
-                                        collision = true;
-                                        self.drawCollisionData(rowSelector, i, CubeSelector, j, CubeSelectorTarget, ultimate_dcube_array);
-                                        toc;
-                                        error("Robots will collide.");
+                        if ~thecollision
+                            for j = i+1:num_children
+                                if ~thecollision
+                                    for CubeSelector = 1:length(ultimate_dcube_array{rowSelector,i})
+<<<<<<< Updated upstream
+                                        if ~collision
+                                            for CubeSelectorTarget = 1:length(ultimate_dcube_array{rowSelector,j})
+                                                if ~collision
+=======
+                                        if ~thecollision
+                                            for CubeSelectorTarget = 1:length(ultimate_dcube_array{rowSelector,i})
+                                                if ~thecollision
+>>>>>>> Stashed changes
+                                                    collision_test = ultimate_dcube_array{rowSelector,i}{1,CubeSelector}.check_dc(ultimate_dcube_array{rowSelector,j}{1,CubeSelectorTarget});
+                                                    if collision_test
+                                                        collisiontest(rowSelector) = true;
+                                                        %collision = true;
+                                                        self.drawCollisionData(rowSelector, i, CubeSelector, j, CubeSelectorTarget, ultimate_dcube_array);
+                                                        error("Robots will collide.");       
+                                                    end
+                                                end
+                                            end
+                                        end
                                     end
-
                                 end
-
                             end
-
                         end
-
                     end
                 end
             end
-            %collision = any(collisiontest);
+            collision = any(collisiontest);
 
             % if theProfiler
             %      profile viewer
             % end
-
-            toc;
             
             return
         end
 
-        function drawCollisionData(~, row, robot1, offendingcube, robot2, offendingcube2, dcube_array)
+        function drawCollisionData(self, row, robot1, offendingcube, robot2, offendingcube2, dcube_array)
             robot_1_cubes = dcube_array{row, robot1};
             robot_2_cubes = dcube_array{row, robot2};
 

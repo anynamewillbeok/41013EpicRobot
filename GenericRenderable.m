@@ -1,7 +1,7 @@
 classdef (Abstract) GenericRenderable < handle & ParentChild & Tickable & matlab.mixin.Copyable
     properties
-        tri(:,3) double {}
-        pts(:,3) double {}
+        tri(:,3) double {} = [8 6 5;7 1 6;2 3 1;4 5 3;1 5 6;7 4 2;8 7 6;7 2 1;2 4 3;4 8 5;1 3 5;7 8 4];
+        pts(:,3) double {} = [0.5 0.5 -0.5;0.5 0.5 0.5;0.5 -0.5 -0.5;0.5 -0.5 0.5;-0.5 -0.5 -0.5;-0.5 0.5 -0.5;-0.5 0.5 0.5;-0.5 -0.5 0.5];
         
     end
     properties(SetAccess = protected)
@@ -13,7 +13,7 @@ classdef (Abstract) GenericRenderable < handle & ParentChild & Tickable & matlab
         needsRepatch(1,1) logical {} = false;
     end
     properties
-        draw_handle (1,:) matlab.graphics.primitive.Patch {}  
+        draw_handle (1,:) %matlab.graphics.primitive.Patch {}  
     end
 
     methods
@@ -23,8 +23,8 @@ classdef (Abstract) GenericRenderable < handle & ParentChild & Tickable & matlab
             pc_type = "GenericRenderable";
 
             if ply_file == "0" %load data for a generic cube if user does not with to supply model data
-                self.tri = [8 6 5;7 1 6;2 3 1;4 5 3;1 5 6;7 4 2;8 7 6;7 2 1;2 4 3;4 8 5;1 3 5;7 8 4];
-                self.pts = [0.5 0.5 -0.5;0.5 0.5 0.5;0.5 -0.5 -0.5;0.5 -0.5 0.5;-0.5 -0.5 -0.5;-0.5 0.5 -0.5;-0.5 0.5 0.5;-0.5 -0.5 0.5];
+                %self.tri = [8 6 5;7 1 6;2 3 1;4 5 3;1 5 6;7 4 2;8 7 6;7 2 1;2 4 3;4 8 5;1 3 5;7 8 4];
+                %self.pts = [0.5 0.5 -0.5;0.5 0.5 0.5;0.5 -0.5 -0.5;0.5 -0.5 0.5;-0.5 -0.5 -0.5;-0.5 0.5 -0.5;-0.5 0.5 0.5;-0.5 -0.5 0.5];
             else
                 [self.tri, self.pts] = plyread(ply_file, 'tri');
             end    

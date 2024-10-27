@@ -1,6 +1,7 @@
 classdef ABBC < handle & ParentChild & Tickable
     properties
         robot 
+        base_transform;
         present_queue_robot FIFO %Present queues
         
         pc_type = "Robot"
@@ -19,6 +20,9 @@ classdef ABBC < handle & ParentChild & Tickable
         dampening_velocity_threshold = 0.15;
 
         filter_type = "BigRubbish";
+        linkdata(1,6)
+        
+        p_dc_t %Precomputed Detection Cube additional Transforms
     end
 
     properties(SetAccess = private)
@@ -32,9 +36,12 @@ classdef ABBC < handle & ParentChild & Tickable
     methods
         function self = ABBC(transform, detection, ultimate)
             self.robot = ABB(transform);
+            self.base_transform = transform;
             self.detection = detection;
             self.robot.model.animate(self.home_position);
             self.current_q = self.home_position;
+
+            self.linkdata = self.robot.model.links;
             
             self.present_queue_robot = FIFO(length(self.robot.model.links), self);
             self.present_queue_robot.attach_parent(ultimate);
@@ -61,7 +68,35 @@ classdef ABBC < handle & ParentChild & Tickable
             bin = Bin("Bin.ply",detection, bin1_transform);
             bin.attach_parent(self);
 
+            self.calculate_p_dc_t(self.linkdata);
+
             self.render();
+        end
+
+        function calculate_p_dc_t(self, links)
+            self.p_dc_t = createArray(4,4,length(links),"double");
+            thickness = [1 1.5 3 1 1 1];
+            scale_y = [4 2.5 2.7 7 1 1];
+            mask = [0 1 1 1 1 0];
+            shift_z = [0 -1 -0.5 -0.15 -3 0];
+            shift_x = [0 0 0 0 0 0];
+            shift_y = [0 0 0 -0.25 0 0];
+            scale_z = [1 1.25 2.7 0.2 1 1];
+            scale_x = [4 1.25 2.7 0.2 1 1];
+            num_links = length(links);
+
+            scalelinks = copy(links);
+            for i = 1:num_links
+                if links(i).d == 0 & links(i).a == 0
+                    scalelinks(i).d = 0.1;
+                    scalelinks(i).a = 0.1;
+                elseif links(i).d == 0
+                    scalelinks(i).d = links(i).a * thickness(i);
+                elseif links(i).a == 0
+                    scalelinks(i).a = links(i).d * thickness(i);
+                end
+                self.p_dc_t(:,:,i) = transl((-links(i).a)/2,0,links(max([i-1 1])).d * mask(i) * 0.4) * trscale(abs(scalelinks(i).a) * 1.2 * scale_x(i),scale_y(i) * 0.1,abs(scalelinks(i).d) * 1.2 * scale_z(i)) * transl(shift_x(i),shift_y(i),0.5 * mask(i) + shift_z(i));
+            end
         end
 
 
@@ -190,7 +225,7 @@ classdef ABBC < handle & ParentChild & Tickable
                             % main figure break
 
                             al = width(queue);
-                            queue(:,[al al-2]) = queue_dls(:,[al al-2]) %swap out queue for DLS'd queue before submission for links end and end-2
+                            queue(:,[al al-2]) = queue_dls(:,[al al-2]); %swap out queue for DLS'd queue before submission for links end and end-2
                         end
                         self.present_queue_robot.add(queue);
 
@@ -394,73 +429,120 @@ classdef ABBC < handle & ParentChild & Tickable
             end
         end 
 
-        function boxes = build_detection_cubes(self, q)
-            thickness = [1 1.5 3 1 1 1];
-            scale_y = [4 2.5 2.7 7 1 1];
-            mask = [0 1 1 1 1 0];
-            shift_z = [0 -1 -0.5 -0.15 -3 0];
-            shift_x = [0 0 0 0 0 0];
-            shift_y = [0 0 0 -0.25 0 0];
-            scale_z = [1 1.25 2.7 0.2 1 1];
-            scale_x = [4 1.25 2.7 0.2 1 1];
+        function boxes = build_detection_cubes(self, q_row)
             boxes = cell(1,6);
-            links = self.robot.model.links;
-            num_links = length(links);
-            [~, transforms] = self.robot.model.fkine(q);
-            transforms = transforms.T;
-            %scale transforms
-            scalelinks = copy(links);
-            for i = 1:num_links
-                if links(i).d == 0 & links(i).a == 0
-                    scalelinks(i).d = 0.1;
-                    scalelinks(i).a = 0.1;
-                elseif links(i).d == 0
-                    scalelinks(i).d = links(i).a * thickness(i);
-                elseif links(i).a == 0
-                    scalelinks(i).a = links(i).d * thickness(i);
+            num_links = length(self.linkdata); 
+            %[~, transforms] = self.robot.model.fkine(q); 
+            %reimplement fkine here to get current transforms
+            transforms = createArray(4,4,width(q_row),"double");
+
+            transformation = self.base_transform;
+
+            function transform = a_copy(link, q) 
+                sa = sin(link.alpha);
+                ca = cos(link.alpha);
+                if link.flip
+                    q = -q + link.offset;
+                else
+                    q = q + link.offset;
                 end
 
-                dc = DetectionController; %fake controller
+                % if link.isrevolute
+                    % revolute (always)
+                    st = sin(q); ct = cos(q);
+                    d = link.d;
+                % else
+                %     % prismatic
+                %     st = sin(link.theta); ct = cos(link.theta);
+                %     d = q;
+                % end
 
-                transforms(:,:,i) = transforms(:,:,i) * transl((-links(i).a)/2,0,links(max([i-1 1])).d * mask(i) * 0.4) * trscale(abs(scalelinks(i).a) * 1.2 * scale_x(i),scale_y(i) * 0.1,abs(scalelinks(i).d) * 1.2 * scale_z(i)) * transl(shift_x(i),shift_y(i),0.5 * mask(i) + shift_z(i));
-                boxes{i} = DetectionCube(dc,transforms(:,:,i));
+                %if L.mdh == 0
+                % standard DH, always using standard DH so we can cut out
+                % an if else statement for modified DH
+
+                transform = [    ct  -st*ca  st*sa   link.a*ct
+                    st  ct*ca   -ct*sa  link.a*st
+                    0   sa      ca      d
+                    0   0       0       1];
+                %end
+            end
+
+            dc = DetectionController; %fake controller
+
+            for i = 1:num_links
+                transformation = transformation * a_copy(self.linkdata(i), q_row(i));
+                transforms(:,:,i) = transformation;
+                boxes{i} = DetectionCube(dc, transforms(:,:,i) * self.p_dc_t(:,:,i));
+            end
+
+            %transforms should be defined somewhere BEFORE this
+            %transforms = transforms.T;
+            %scale transforms
+            %scalelinks = copy(links);
+            for i = 1:num_links
+               
+                
+                 %= DetectionCube(dc,transforms(:,:,i));
             end
         end
     end
 
     methods(Static)
 
-        function boxes = build_detection_cubes_static(self, q)
-            thickness = [1 1.5 3 1 1 1];
-            scale_y = [4 2.5 2.7 7 1 1];
-            mask = [0 1 1 1 1 0];
-            shift_z = [0 -1 -0.5 -0.15 -3 0];
-            shift_x = [0 0 0 0 0 0];
-            shift_y = [0 0 0 -0.25 0 0];
-            scale_z = [1 1.25 2.7 0.2 1 1];
-            scale_x = [4 1.25 2.7 0.2 1 1];
+        function boxes = build_detection_cubes_static(q_row, links, base_transform, p_dc_t)
+            
             boxes = cell(1,6);
-            links = self.robot.model.links;
+            %links = self.robot.model.links;
             num_links = length(links);
-            [~, transforms] = self.robot.model.fkine(q);
-            transforms = transforms.T;
-            %scale transforms
-            scalelinks = copy(links);
-            for i = 1:num_links
-                if links(i).d == 0 & links(i).a == 0
-                    scalelinks(i).d = 0.1;
-                    scalelinks(i).a = 0.1;
-                elseif links(i).d == 0
-                    scalelinks(i).d = links(i).a * thickness(i);
-                elseif links(i).a == 0
-                    scalelinks(i).a = links(i).d * thickness(i);
+            %[~, transforms] = self.robot.model.fkine(q); reimplement fkine
+            %here
+            transformation = base_transform;
+            transforms = createArray(4,4,width(q_row),"double");
+
+            function transform = a_copy(link, q) %copy of Link.A function because SerialLink hates being parallelised
+                sa = sin(link.alpha);
+                ca = cos(link.alpha);
+                if link.flip
+                    q = -q + link.offset;
+                else
+                    q = q + link.offset;
                 end
+
+                % if link.isrevolute
+                    % revolute (always)
+                    st = sin(q); ct = cos(q);
+                    d = link.d;
+                % else
+                %     % prismatic
+                %     st = sin(link.theta); ct = cos(link.theta);
+                %     d = q;
+                % end
+
+                %if L.mdh == 0
+                % standard DH, always using standard DH so we can cut out
+                % an if else statement for modified DH
+
+                transform = [    ct  -st*ca  st*sa   link.a*ct
+                    st  ct*ca   -ct*sa  link.a*st
+                    0   sa      ca      d
+                    0   0       0       1];
+                %end
+            end
+
+            for i = 1:num_links
+                transformation = transformation * a_copy(links(i), q_row(i));
+                transforms(:,:,i) = transformation;
+            end
+            
+            for i = 1:num_links
 
                 dc = DetectionController; %fake controller
 
-                transforms(:,:,i) = transforms(:,:,i) * transl((-links(i).a)/2,0,links(max([i-1 1])).d * mask(i) * 0.4) * trscale(abs(scalelinks(i).a) * 1.2 * scale_x(i),scale_y(i) * 0.1,abs(scalelinks(i).d) * 1.2 * scale_z(i)) * transl(shift_x(i),shift_y(i),0.5 * mask(i) + shift_z(i));
-                boxes{i} = DetectionCube(dc,transforms(:,:,i));
+                boxes{i} = DetectionCube(dc, transforms(:,:,i) * p_dc_t(:,:,i));
             end
         end
+
+        
     end
 end

@@ -98,12 +98,14 @@ classdef DetectionCube < GenericRenderable
             
             %This is the "green" bounding box of the "magenta" detection cube. 
             %Not the actual detection box itself.
-            self.box_limits(1,1) = min(local_pts(1,:)); %min x
-            self.box_limits(2,1) = max(local_pts(1,:)); %max x
-            self.box_limits(1,2) = min(local_pts(2,:)); %min y
-            self.box_limits(2,2) = max(local_pts(2,:)); %max y
-            self.box_limits(1,3) = min(local_pts(3,:)); %min z
-            self.box_limits(2,3) = max(local_pts(3,:)); %max z
+            [self.box_limits(1,1),self.box_limits(2,1)] = bounds(local_pts(1,:)); %min x and max x
+            %self.box_limits(2,1) = max(local_pts(1,:)); %max x
+            [self.box_limits(1,2),self.box_limits(2,2)] = bounds(local_pts(2,:));
+            %self.box_limits(1,2) = min(local_pts(2,:)); %min y
+            %self.box_limits(2,2) = max(local_pts(2,:)); %max y
+            [self.box_limits(1,3),self.box_limits(2,3)] = bounds(local_pts(3,:));
+            %self.box_limits(1,3) = min(local_pts(3,:)); %min z
+            %self.box_limits(2,3) = max(local_pts(3,:)); %max z
 
             %disp(self.box_limits);
 

@@ -15,7 +15,7 @@ light('Style','local','Position',[ -1.5 0 2],'Parent',gca);
 drawnow;
 
 dc = DetectionController();
-ucc = UltimateCollisionChecker
+ucc = UltimateCollisionChecker;
 robot_ur3e = ABBC(transl(-0.5,-0.4,0), dc, ucc);
 
 RandomBrickArray = createArray(0,0,'cell');
