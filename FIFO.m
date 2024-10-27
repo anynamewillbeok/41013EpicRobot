@@ -42,6 +42,7 @@ classdef FIFO < handle & ParentChild
             %call parent (Ultimate Collision Checker) for okay
             if isempty(self.attached_parent{1})
                 error("FIFO has no Ultimate Collision Checker™ attached!");
+                
                 success = false;
                 return
             else

@@ -1,7 +1,8 @@
 classdef (Abstract) ParentChild < handle
-    properties (GetAccess = public, SetAccess = private)
+    properties (GetAccess = public, SetAccess = protected)
         attached_parent (1,1) cell {} = cell(1,1)
         attached_child (1,:) cell {} = cell(1,0);
+        custom_pc_logic(1,1) logical;
     end
 
     properties (Abstract)
@@ -9,6 +10,9 @@ classdef (Abstract) ParentChild < handle
     end
 
     methods
+        function self = ParentChild(self)
+            self.custom_pc_logic = 0;
+        end
         %% Attach new parent
         function attach_parent(self, new_parent)
             if ~isempty(self.attached_parent{1})
@@ -17,6 +21,9 @@ classdef (Abstract) ParentChild < handle
 
             self.attached_parent{1} = new_parent;
             self.attached_parent{1}.attach_child(self)
+            if (self.attached_parent{1}.custom_pc_logic)
+                self.attached_parent{1}.f_custom_pc_logic(); %i cant override Attach_child here, so run custom logic instead (used for UltimateCollisionChecker);
+            end
         end
 
         %% Make Orphan (attach current parent)
@@ -32,7 +39,7 @@ classdef (Abstract) ParentChild < handle
             status = isempty(self.attached_parent{1});
         end
     end
-    methods(Access = private)
+    methods(Access = protected)
         %These are locked away as private functions as they are used by
         %attach_parent and orphan. Calling these directly would cause an
         %inconsistent state.

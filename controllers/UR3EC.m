@@ -453,9 +453,9 @@ classdef UR3EC < handle & ParentChild & Tickable
             %transforms = transforms.T;
             %scale transforms
             %scalelinks = copy(links);
+            dc = DetectionController; %fake controller
             for i = 1:num_links
-               
-                dc = DetectionController; %fake controller
+
                 boxes{i} = DetectionCube(dc, transforms(:,:,i) * p_dc_t(:,:,i));
                  %= DetectionCube(dc,transforms(:,:,i));
             end

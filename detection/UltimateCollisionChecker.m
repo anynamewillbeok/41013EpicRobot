@@ -1,9 +1,24 @@
-classdef UltimateCollisionChecker < handle & ParentChild
+classdef UltimateCollisionChecker < handle & ParentChild & Tickable
     properties
         pc_type = "UCC";
+        detection_cube_cache;
+        
     end
 %Attached Children are all meant to be Robot Q position FIFO queues
     methods
+
+        function self = UltimateCollisionChecker(self)
+            self@ParentChild();
+            self.detection_cube_cache = CubeCache(0);
+            self.custom_pc_logic = 1;
+        end
+
+        function tick(self)
+            self.number_of_ticks = self.number_of_ticks + 1;
+            %must tick our cache
+            self.detection_cube_cache.pull();
+        end
+
         function collision = check_collision(self, calling_q_matrix, calling_fifo)
 
             %tic;
@@ -38,11 +53,13 @@ classdef UltimateCollisionChecker < handle & ParentChild
                 end
             end
             longestFIFO = max(fifo_lengths);
+            
 
             
 
             ultimate_q_array = cell(longestFIFO, num_children);
-            ultimate_dcube_array = cell(longestFIFO, num_children);
+            
+            %ultimate_dcube_array = cell(longestFIFO, num_children);
              %row 1 corresponds to the "active" region, also why q
                 %array is one higher than longestFIFO
 
@@ -72,7 +89,7 @@ classdef UltimateCollisionChecker < handle & ParentChild
                 end
                 ultimate_q_array(:,i) = fifo_data;
             end
-            %STAGE 2: GENERATE BOXES
+            
             %children = self.attached_child;
             % 
             %STAGE 2.-1: BUILD PARALLELISATION DATA
@@ -91,12 +108,28 @@ classdef UltimateCollisionChecker < handle & ParentChild
             % addAttachedFiles(gcp,["Link.m" "transl.m" "trscale.m"]);
 
             %ticBytes;
+
+            %first import cached dcube array data and row-resize if needed
+
             
+
+            
+
+            ultimate_dcube_array = self.detection_cube_cache.get_active_and_queue(longestFIFO); %entries marked as "0" need a Detection Cube Array generated
+            %Invalidate the calling FIFO's detection cube array... as thats
+            %what we're intending on replacing!
+
+            
+            ultimate_dcube_array(:,calling_fifo_index) = cell(height(longestFIFO),1);
+
+            %STAGE 2: GENERATE BOXES
             for i = 1:num_children
             %for i = 1:num_children %tried to use parfor here, unfortunately has massive overhead so we just use normal for
                 %generate boxes for Q array on one robot
                 for j = 1:longestFIFO
-                    ultimate_dcube_array{j,i} = self.attached_child{i}.assigned_robot.build_detection_cubes(ultimate_q_array{j,i});
+                    if isempty(ultimate_dcube_array{j,i})
+                        ultimate_dcube_array{j,i} = self.attached_child{i}.assigned_robot.build_detection_cubes(ultimate_q_array{j,i});
+                    end
                     %ultimate_dcube_array{j,i} = build_detection_cubes_static(ultimate_q_array{j,i}, linkdata{i}, robot_base_transform{i}, robot_p_dc_t{i}) %Use if you want to try parallelisation
                     %ultimate_dcube_array{j,i} = cubes;
                 end
@@ -112,6 +145,12 @@ classdef UltimateCollisionChecker < handle & ParentChild
             %collisiontest = createArray(theheight2,1,"logical");
             thecollision = false;
             collision = false;
+
+            
+
+            %fifo_data = self.detection_cube_cache.get_active_and_queue(longestFIFO);
+            
+
             
             for rowSelector = 1:theheight2
                 sliced_ultimate_dcube_array = ultimate_dcube_array(rowSelector,:);
@@ -131,7 +170,7 @@ classdef UltimateCollisionChecker < handle & ParentChild
                                         %collisiontest(rowSelector) = true;
                                         collision = true;
                                         self.drawCollisionData(rowSelector, i, CubeSelector, j, CubeSelectorTarget, ultimate_dcube_array);
-                                        toc;
+                                        %toc;
                                         warning("Robots will collide.");
                                     end
 
@@ -151,6 +190,11 @@ classdef UltimateCollisionChecker < handle & ParentChild
             % end
 
             %toc;
+
+            if ~collision
+                self.detection_cube_cache.replace_queue(ultimate_dcube_array);
+            end
+                
             
             return
         end
@@ -160,6 +204,8 @@ classdef UltimateCollisionChecker < handle & ParentChild
             robot_2_cubes = dcube_array{row, robot2};
 
             for i = 1:length(robot_1_cubes)
+                robot_1_cubes{i}.needsRedraw = 1;
+                robot_1_cubes{i}.needsRepatch = 1;
                 handle = robot_1_cubes{i}.render();
                 if i == offendingcube
                 handle.FaceColor = "red";
@@ -170,6 +216,8 @@ classdef UltimateCollisionChecker < handle & ParentChild
                 end
             end
             for i = 1:length(robot_2_cubes)
+                robot_2_cubes{i}.needsRedraw = 1;
+                robot_2_cubes{i}.needsRepatch = 1;
                 handle = robot_2_cubes{i}.render();
                 if i == offendingcube2
                 handle.FaceColor = "red";
@@ -180,7 +228,15 @@ classdef UltimateCollisionChecker < handle & ParentChild
                 end
             end
         end
+
+        
             
 
+    end
+
+    methods(Access = public)
+        function f_custom_pc_logic(self) %called when Attach Parent from another object, must recreate cube cache
+            self.detection_cube_cache = CubeCache(length(self.attached_child));
+        end
     end
 end

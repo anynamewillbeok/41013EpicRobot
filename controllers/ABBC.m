@@ -534,11 +534,10 @@ classdef ABBC < handle & ParentChild & Tickable
                 transformation = transformation * a_copy(links(i), q_row(i));
                 transforms(:,:,i) = transformation;
             end
+
+            dc = DetectionController; %fake controller
             
             for i = 1:num_links
-
-                dc = DetectionController; %fake controller
-
                 boxes{i} = DetectionCube(dc, transforms(:,:,i) * p_dc_t(:,:,i));
             end
         end
