@@ -4,7 +4,7 @@ classdef ABBC < handle & ParentChild & Tickable
         base_transform;
         present_queue_robot FIFO %Present queues
         
-        pc_type = "Robot"
+        pc_type = "RobotABBCController"
         detection(1,1) DetectionController
         detection_cubes(1,:) DetectionCube
 

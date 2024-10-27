@@ -50,7 +50,7 @@ zlim([-0.5 3]);
 global eStop_triggered
 eStop_triggered = false;
 
-% UI BUTTON
+% UI BUTTON: ESTOP
 f = uifigure;
 stopButton = uibutton(f, 'Text', 'Emergency Stop', ...
     'Position', [20, 20, 150, 30], ...
@@ -62,8 +62,15 @@ function triggerEStop()
     eStop_triggered = true;
 end
 
+% UI BUTTON: TOTAL CONTROL
+stopButton2 = uibutton(f, 'Text', 'Emergency Stop', ...
+    'Position', [20, 60, 150, 30], ...
+    'ButtonPushedFcn', @(~, ~) triggerTotalControl());
+
 times = createArray(1,3000,"double");
 i = 0;
+
+RandomBrickArray = cell(1000,1);
 
 for i = 1:3000
     tickStart = tic;
@@ -78,14 +85,14 @@ for i = 1:3000
         if rand > 0.5 % Regular rubbish
             r = Rubbish('HalfSizedRedGreenBrick2.ply');
             r.attach_parent(conveyor_belt);
-            RandomBrickArray{end+1} = r;
+            RandomBrickArray{(i / 50)} = r;
             dc.register(r);
             r.set_transform_4by4(transl(-0.1, ((rand - 0.5) * 0.2), 0));
         else % Big rubbish
             r = Rubbish('Can.ply');
             r.pc_type = "BigRubbish";
             r.attach_parent(conveyor_belt);
-            RandomBrickArray{end+1} = r;
+            RandomBrickArray{(i / 50)} = r;
             dc.register(r);
             r.set_transform_4by4(transl(-0.1, ((rand - 0.5) * 0.2), 0));
         end

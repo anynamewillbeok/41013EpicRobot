@@ -22,8 +22,8 @@ classdef FIFO < handle & ParentChild
         function vector = pull(self)
             vector = self.active;
             if ~isempty(self.queue)
-            self.active = self.queue(1,:);
-            self.queue(1,:) = [];
+                self.active = self.queue(1,:);
+                self.queue(1,:) = [];
             end
         end
 
@@ -32,6 +32,14 @@ classdef FIFO < handle & ParentChild
             if isempty(self.active)
                 self.pull()
             end
+        end
+
+        function force_replace(self, matrix)
+            self.active = matrix;
+        end
+
+        function clear(self)
+            self.queue = createArray(0,self.width,'double');
         end
 
         function success = add(self, matrix)
