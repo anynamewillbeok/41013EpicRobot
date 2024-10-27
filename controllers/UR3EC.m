@@ -101,7 +101,7 @@ classdef UR3EC < handle & ParentChild & Tickable
                         if ~isempty(detected_objects)
                             for i = 1:length(detected_objects)
                                 if detected_objects{i}.pc_type == self.filter_type
-                                    disp("Detected Regular Rubbish!");
+                                    %disp("Detected Regular Rubbish!");
                                     self.tracked_object = detected_objects(i); %select first object
                                     self.tracked_object_info{1} = self.tracked_object{1}.current_transform;
                                     self.state = 1000;
@@ -196,7 +196,7 @@ classdef UR3EC < handle & ParentChild & Tickable
                         jac = self.robot.model.jacob0(self.current_q);
                         jaci = inv(jac);
                         qd = jaci * [self.tracked_object_velocity(1) * PATH_LENGTH self.tracked_object_velocity(2) * PATH_LENGTH 0 0 0 0]';
-                        disp("------QD------")
+                        %disp("------QD------")
                         qdt = qd';
 
                         %find starting qd with RMRC
@@ -236,7 +236,7 @@ classdef UR3EC < handle & ParentChild & Tickable
                             target_location(1:3,i) = target_location(1:3,i)/norm(target_location(1:3,i));
                         end
 
-                        disp(target_location);
+                        %disp(target_location);
                         %generate ikine to bin
                         new_q = self.robot.model.ikine(target_location,'q0',deg2rad([90 -30 30 -90 -90 0]),'mask',[1 1 1 1 1 1],'forceSoln');
                     

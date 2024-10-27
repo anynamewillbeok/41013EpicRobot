@@ -132,7 +132,7 @@ classdef UltimateCollisionChecker < handle & ParentChild
                                         collision = true;
                                         self.drawCollisionData(rowSelector, i, CubeSelector, j, CubeSelectorTarget, ultimate_dcube_array);
                                         toc;
-                                        error("Robots will collide.");
+                                        warn("Robots will collide.");
                                     end
 
                                 end
