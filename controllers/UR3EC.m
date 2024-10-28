@@ -20,8 +20,14 @@ classdef UR3EC < handle & ParentChild & Tickable
 
         total_control(1,1) logical
         handle_controller(1,1)
+        handle_controller2
+
+        motion_axis_history FIFO;
+        rotation_score(1,1);
 
         p_dc_t %Precomputed Detection Cube additional Transforms
+        camera_transform_offsets = pi/4; %rotation around robot
+        camera_height_offset = -pi/4;
     end
 
     properties(SetAccess = private)
@@ -47,6 +53,7 @@ classdef UR3EC < handle & ParentChild & Tickable
             self.present_queue_robot = FIFO(length(self.robot.model.links), self);
             self.present_queue_robot.attach_parent(ultimate);
             self.present_queue_robot.force_add(deg2rad([90,-120,-60,-90,90,0]));
+            
 
 
             %starting Q positions
@@ -74,11 +81,18 @@ classdef UR3EC < handle & ParentChild & Tickable
             self.render();
         end
 
-        function total_control_activate(self, controller_handle)
+        function total_control_activate(self, controller_handle, controller_handle2)
             self.total_control = true;
             self.handle_controller = controller_handle;
+            self.handle_controller2 = controller_handle2;
             %throw away FIFO data, we want control now!
             self.present_queue_robot.clear();
+            self.motion_axis_history = FIFO(6, self);
+            self.motion_axis_history.force_add(axis(controller_handle2));
+            self.motion_axis_history.force_add(axis(controller_handle2));
+            self.motion_axis_history.force_add(axis(controller_handle2));
+            self.motion_axis_history.force_add(axis(controller_handle2));
+            self.rotation_score = 0;
         end
 
         function total_control_deactivate(self)
@@ -346,6 +360,7 @@ classdef UR3EC < handle & ParentChild & Tickable
 
                 end
             else
+                
                 %TOTAL CONTROL: controller time!
                 
                 %DUALSENSE controller on LINUX:
@@ -368,7 +383,27 @@ classdef UR3EC < handle & ParentChild & Tickable
                 %Axis 4: RIGHT_STICK_X LEFT-NEGATIVE
                 %Axis 5: RIGHT_STICK_Y UP-NEGATIVE
                 %Axis 6: RIGHT_TRIGGER (UNPULLED -1, PULLED 1)
+                %Axis 7: LEFT -1 RIGHT 1 DPAD
+                %Axis 8: UP   -1 DOWN  1 DPAD
+
+                %
+                
                 [axes, buttons, povs] = read(self.handle_controller);
+                [motion_axes, buttons2, povs2] = read(self.handle_controller2);
+                self.motion_axis_history.force_add(motion_axes);
+                motion_axes = self.motion_axis_history.get_active_and_queue(self.motion_axis_history.get_active_and_queue_length());
+                self.motion_axis_history.pull();
+                %filter data
+                motion_axes = mean(motion_axes);
+
+                CAMERA_ANGLE = self.camera_transform_offsets;
+                CAMERA_ANGLE = CAMERA_ANGLE + (axes(7) / 25);
+                self.camera_transform_offsets = CAMERA_ANGLE;
+
+                CAMERA_ANGLE_HEIGHT = self.camera_height_offset;
+                CAMERA_ANGLE_HEIGHT = CAMERA_ANGLE_HEIGHT + (-axes(8) / 25);
+                self.camera_height_offset = CAMERA_ANGLE_HEIGHT;
+                
 
                 filtered_inputs = createArray(1,6,"double");
 
@@ -397,14 +432,57 @@ classdef UR3EC < handle & ParentChild & Tickable
                 end
                 %disp(filtered_inputs);
 
-                current_position = self.robot.model.fkine(self.current_q).T;
+                [current_position, others] = self.robot.model.fkine(self.current_q);
+                current_position = current_position.T;
+                %others = others.T;
                 inv2 = inv(self.base_transform);
+                
                 relative = inv2 * current_position;
+                
+                %remove rotation
+                relative(1:3, 1:3) = eye(3);
+                relative = relative * trotz(-CAMERA_ANGLE);
+
+                %filter motion input
+                %axis 1 is roll axis (flat is 0, anticlockwise is positive
+                %until around 0.250 where controller is on its side)
+                %axis 2 is "up" (trackpad normal, 0.255 pointing up, 0 if pointing to the side, -0.250 pointing down)
+                %axis 3 is pitch (arrow pointing towards you, if its
+                %pointing down its negative)
+
+                %axis 4 is pitch speed (rolling forwards is negative)
+                %axis 5 is turn speed (controller spinning around on table
+                %flat) (anticlockwise positive)
+                %axis 6 is roll speed (anticlockwise positive
+
+                disp(motion_axes);
+
+                self.rotation_score = self.rotation_score + motion_axes(5);
+
 
                 %target_position = eye(4);
                 %target_position(1:3,4) = current_position(1:3,4);
-                %rotation = (filtered_inputs(3) - filtered_inputs(6)) / 50;
-                target_position = eye(4) * self.base_transform * trotz((filtered_inputs(3) - filtered_inputs(6)) / 50) * relative * transl(0,filtered_inputs(1)/200,filtered_inputs(2)/200) * trotx(filtered_inputs(4) * 0.04) * troty(filtered_inputs(5) * 0.04) * trotz((buttons(5) - buttons(6)) * 0.04);% * trotz((filtered_inputs(3) - filtered_inputs(6)) / 50);
+                %rotationTransform = eye(4) * trotx(motion_axes(1)) * troty(motion_axes(3));
+                %rotation must be done relative to link end-1
+                
+                target_position = eye(4) * self.base_transform * trotz((filtered_inputs(3) - filtered_inputs(6)) / 50) * relative * transl(filtered_inputs(1)/200,-filtered_inputs(2)/200,-filtered_inputs(5)/200);% * trotz((buttons(5) - buttons(6)) * 0.04);% * rotationTransform;% * trotz((filtered_inputs(3) - filtered_inputs(6)) / 50);
+                %clear rotation vectors otherwise motion controls will make
+                %no sense
+                %tilt axis
+                %target_position(1:3,1:3) = eye(3);
+                target_position(1:3,1:3) = rotz(-CAMERA_ANGLE) * rotx(pi);
+                
+                % upsidedown = -1;
+                % if motion_axes(2) < 0
+                %     %motion_axes(2) is negative if the controller isnt pointing
+                %     %upwards
+                %     upsidedown = 1;
+                %     %target_position(1:3,3) = [0 0 1];
+                % end
+                % target_position = target_position * trotx(((upsidedown - 1) / 2) * pi)
+                    
+                target_position = target_position * troty((motion_axes(1) + motion_axes(6)) * 1.5) * trotx((-motion_axes(3) + motion_axes(4)) * 1.5) * trotz(-CAMERA_ANGLE);
+
                 %target_position = target_position * trotz((filtered_inputs(3) - filtered_inputs(6)) / 200) * transl(0,-filtered_inputs(1)/200,-filtered_inputs(2)/200);
                 %target_position(1:3,1:3) = current_position(1:3,1:3);
                 new_q = self.robot.model.ikine(target_position,'q0',self.current_q,'forceSoln');
@@ -412,13 +490,17 @@ classdef UR3EC < handle & ParentChild & Tickable
 
                 %CAMERA HACK
 
-                [~, all] = self.robot.model.fkine(new_q);
-                cameraTransform = all(end).T * trotx(pi/2) * troty(pi/2) * trotz(pi) * transl(0, 0.1, -0.2) * trotx(0.6);
+                
+                cameraTransform = target_position;
+                %throw away rotation data, keep camera axis fixed
+                cameraTransform(1:3, 1:3) = eye(3) * rotz(-CAMERA_ANGLE) * rotx(CAMERA_ANGLE_HEIGHT);
+                cameraTransform = cameraTransform * transl(0, -1, 0);% * trotx(0.6);
+                
 
                 camPos = cameraTransform(1:3, 4)';
-                camTarget = cameraTransform * transl(0,0,1);
+                camTarget = cameraTransform * transl(0,1,0);
                 camTarget = camTarget(1:3, 4).';
-                camUpVec = cameraTransform(1:3, 2)';
+                camUpVec = cameraTransform(1:3, 3)'; %up vector is wherever Z is pointing
 
                 h = gca;
                 camproj('perspective');

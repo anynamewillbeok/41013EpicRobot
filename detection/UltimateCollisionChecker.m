@@ -154,36 +154,28 @@ classdef UltimateCollisionChecker < handle & ParentChild & Tickable
             
             for rowSelector = 1:theheight2
                 sliced_ultimate_dcube_array = ultimate_dcube_array(rowSelector,:);
-                thecollision = false;
                 if ~thecollision
-                    for i = 1:num_children
-                        %if ~thecollision
-                        for j = i+1:num_children
-                            %if ~thecollision
-                            for CubeSelector = 1:length(sliced_ultimate_dcube_array{i})
-                                %if ~thecollision
+                    for j = 1:num_children
+                        if calling_fifo_index ~= j %dont check self
+                            for CubeSelector = 1:length(sliced_ultimate_dcube_array{calling_fifo_index})
                                 for CubeSelectorTarget = 1:length(sliced_ultimate_dcube_array{j})
-                                    %if ~thecollision
-                                    collision_test = sliced_ultimate_dcube_array{i}{CubeSelector}.check_dc(sliced_ultimate_dcube_array{j}{CubeSelectorTarget});
+                                    collision_test = sliced_ultimate_dcube_array{calling_fifo_index}{CubeSelector}.check_dc(sliced_ultimate_dcube_array{j}{CubeSelectorTarget});
                                     if collision_test
-                                        thecollision = true;
-                                        %collisiontest(rowSelector) = true;
                                         collision = true;
                                         self.drawCollisionData(rowSelector, i, CubeSelector, j, CubeSelectorTarget, ultimate_dcube_array);
+                                        %draw first collision cubes that do collide then check no further, because obviously something bad will happen
                                         %toc;
                                         warning("Robots will collide.");
+                                        return;
                                     end
-
                                 end
-
                             end
-
                         end
-
                     end
                 end
             end
-            %collision = any(collisiontest);
+            
+            
 
             % if theProfiler
             %      profile viewer

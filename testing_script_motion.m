@@ -17,18 +17,18 @@ b = Rubbish('HalfSizedRedGreenBrick2.ply');
 c = Rubbish('HalfSizedRedGreenBrick2.ply');
 
 dc = DetectionController;
-dc.register(a);
-dc.register(b);
-dc.register(c);
-
-a.attach_parent(conveyor_belt);
-a.set_transform_4by4(transl(0,0,0));
-
-b.attach_parent(conveyor_belt);
-b.set_transform_4by4(transl(0.3,-0.1,0));
-
-c.attach_parent(conveyor_belt);
-c.set_transform_4by4(transl(-0.2,0.1,0));
+% dc.register(a);
+% dc.register(b);
+% dc.register(c);
+% 
+% a.attach_parent(conveyor_belt);
+% a.set_transform_4by4(transl(0,0,0));
+% 
+% b.attach_parent(conveyor_belt);
+% b.set_transform_4by4(transl(0.3,-0.1,0));
+% 
+% c.attach_parent(conveyor_belt);
+% c.set_transform_4by4(transl(-0.2,0.1,0));
 
 conveyor_belt.render();
 
@@ -41,20 +41,14 @@ drawnow;
 
 
 ucc = UltimateCollisionChecker;
-robot_ur3e = UR3EC(transl(-1.0,-0.4,0), dc, ucc);
-robot_ur3e2 = UR3EC(transl(-1.5,-0.4,0), dc, ucc);
-robot_ur3e3 = UR3EC(transl(-2.0,-0.4,0), dc, ucc);
-robot_ur3e4 = UR3EC(transl(-2.5,-0.4,0), dc, ucc);
-robot_abbc = ABBC(transl(-0.5,0.8,0) * trotz(pi),dc, ucc);
-robot_abbc2 = ABBC(transl(-3.0,0.4,0) * trotz(pi + pi/4),dc, ucc);
 
-robot_array = cell(1,3);
-robot_array{1} = robot_ur3e;
-robot_array{2} = robot_ur3e2;
-robot_array{3} = robot_ur3e3;
-robot_array{4} = robot_ur3e4;
-robot_array{5} = robot_abbc;
-robot_array{6} = robot_abbc2;
+robot_array = cell(1,1);
+robot_array{1} = UR3EC(transl(-1.0,-0.4,0), dc, ucc);
+% robot_array{end+1} = UR3EC(transl(-1.5,-0.4,0), dc, ucc);
+% robot_array{end+1} = UR3EC(transl(-2.0,-0.4,0), dc, ucc);
+% robot_array{end+1} = UR3EC(transl(-2.5,-0.4,0), dc, ucc);
+% robot_array{end+1} = ABBC(transl(-0.5,0.8,0) * trotz(pi),dc, ucc);
+% robot_array{end+1} = ABBC(transl(-3.0,0.4,0) * trotz(pi + pi/4),dc, ucc);
 
 RandomBrickArray = createArray(0,0,'cell');
 
@@ -62,15 +56,15 @@ xlim([-6 6]);
 ylim([-3 3]);
 zlim([-0.5 3]);
 
-hold on;
-        conveyor_belt.render();
-        robot_ur3e.render();
-        robot_ur3e2.render();
-        robot_ur3e3.render();
-        robot_ur3e4.render();
-        robot_abbc.render();
-        robot_abbc2.render();
-        hold off;
+% hold on;
+%         conveyor_belt.render();
+%         robot_ur3e.render();
+%         robot_ur3e2.render();
+%         robot_ur3e3.render();
+%         robot_ur3e4.render();
+%         robot_abbc.render();
+%         robot_abbc2.render();
+%         hold off;
 
 %rate = rateControl(30);
 %profile on -timestamp -historysize 10000000 -timer performance
@@ -103,7 +97,8 @@ end
 
 function triggerTotalControl(i, robotarray)
     stick = vrjoystick(1)
-    robotarray{i}.total_control_activate(stick);
+    stick2 = vrjoystick(2) %%Dualsense motion controls, could be funny!
+    robotarray{i}.total_control_activate(stick, stick2);
 end
 
 
@@ -116,7 +111,7 @@ for i = 1:3000
     %Every tick, random chance to spawn a new Rubbish
     if mod(i,50) == 0
         %Spawn Rubbish or Big Rubbish
-        if rand > 0.25 %regular rubbish
+        if rand > 0 %regular rubbish
             r = Rubbish('HalfSizedRedGreenBrick2.ply');
             r.attach_parent(conveyor_belt);
             RandomBrickArray{end+1} = r;
@@ -134,23 +129,19 @@ for i = 1:3000
     end
 
     %if (~estop_triggered)
-        conveyor_belt.tick();
-    robot_ur3e.tick();
-    robot_ur3e2.tick();
-    robot_ur3e3.tick();
-    robot_ur3e4.tick();
-    robot_abbc.tick();
-    robot_abbc2.tick();
+    conveyor_belt.tick();
+    for i = 1:length(robot_array)
+        robot_array{i}.tick();
+    end
     ucc.tick();
-        hold on;
-        conveyor_belt.render();
-    robot_ur3e.render();
-    robot_ur3e2.render();
-    robot_ur3e3.render();
-    robot_ur3e4.render();
-    robot_abbc.render();
-    robot_abbc2.render();
-        hold off;
+    hold on;
+    conveyor_belt.render();
+    for i = 1:length(robot_array);
+        robot_array{i}.render();
+    end
+    hold off;
+        
+     
     %end
 
     drawnow;
