@@ -13,21 +13,21 @@ classdef UR3EC < handle & ParentChild & Tickable
         filter_type = "Rubbish";
         linkdata(1,6)
 
-        dco
+        %dco
 
         dampening_max_lambda = 0.005;
         dampening_velocity_threshold = 0.15;
 
-        total_control(1,1) logical
-        handle_controller(1,1)
-        handle_controller2
-
+        total_control(1,1) logical;
+        handle_controller(1,1);
+        handle_controller2;
         motion_axis_history FIFO;
         rotation_score(1,1);
-
-        p_dc_t %Precomputed Detection Cube additional Transforms
         camera_transform_offsets = pi/4; %rotation around robot
         camera_height_offset = -pi/4;
+
+        p_dc_t %Precomputed Detection Cube additional Transforms
+        
     end
 
     properties(SetAccess = private)
@@ -40,7 +40,7 @@ classdef UR3EC < handle & ParentChild & Tickable
 
     methods
         function self = UR3EC(transform, detection, ultimate)
-            self.dco = detection;
+            %self.dco = detection;
             self.total_control = false;
             self.robot = UR3eNT(transform);
             self.base_transform = transform;
@@ -440,7 +440,7 @@ classdef UR3EC < handle & ParentChild & Tickable
                 relative = inv2 * current_position;
                 
                 %remove rotation
-                relative(1:3, 1:3) = eye(3);
+                relative(1:3, 1:3) = self.base_transform(1:3,1:3);
                 relative = relative * trotz(-CAMERA_ANGLE);
 
                 %filter motion input
@@ -510,19 +510,21 @@ classdef UR3EC < handle & ParentChild & Tickable
                     'CameraTarget', camTarget, ...
                     'CameraUpVector', camUpVec);
 
-                %generate detection hull, use to sample grabbing
+                
 
-                %check if we have any attached Rubbish
+                %check if we have any attached object matching our filter
                 attached_brick_child_id = 0;
                 for i = 1:length(self.attached_child)
-                    if self.attached_child{i}.pc_type == "Rubbish"
+                    if self.attached_child{i}.pc_type == self.filter_type
                         attached_brick_child_id = i;
                     end
                 end
 
+                %generate detection hull, use to sample grabbing
+
                 if buttons(1) && attached_brick_child_id == 0
                     boxes = self.build_detection_cubes(new_q);
-                    boxes{6}.dco = self.dco;
+                    boxes{6}.dco = self.detection;
                     detected_objects = boxes{6}.tick();
                     if ~isempty(detected_objects)
                         for i = 1:length(detected_objects)

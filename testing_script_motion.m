@@ -47,7 +47,7 @@ robot_array{1} = UR3EC(transl(-1.0,-0.4,0), dc, ucc);
 % robot_array{end+1} = UR3EC(transl(-1.5,-0.4,0), dc, ucc);
 % robot_array{end+1} = UR3EC(transl(-2.0,-0.4,0), dc, ucc);
 % robot_array{end+1} = UR3EC(transl(-2.5,-0.4,0), dc, ucc);
-% robot_array{end+1} = ABBC(transl(-0.5,0.8,0) * trotz(pi),dc, ucc);
+robot_array{end+1} = ABBC(transl(-0.5,1.2,-0.5) * trotz(pi), dc, ucc);
 % robot_array{end+1} = ABBC(transl(-3.0,0.4,0) * trotz(pi + pi/4),dc, ucc);
 
 RandomBrickArray = createArray(0,0,'cell');
@@ -111,7 +111,7 @@ for i = 1:3000
     %Every tick, random chance to spawn a new Rubbish
     if mod(i,50) == 0
         %Spawn Rubbish or Big Rubbish
-        if rand > 0 %regular rubbish
+        if rand > 0.1 %regular rubbish
             r = Rubbish('HalfSizedRedGreenBrick2.ply');
             r.attach_parent(conveyor_belt);
             RandomBrickArray{end+1} = r;
