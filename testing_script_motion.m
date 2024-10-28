@@ -44,17 +44,17 @@ ucc = UltimateCollisionChecker;
 
 robot_array = cell(1,1);
 robot_array{1} = UR3EC(transl(-1.0,-0.4,0), dc, ucc);
-% robot_array{end+1} = UR3EC(transl(-1.5,-0.4,0), dc, ucc);
-% robot_array{end+1} = UR3EC(transl(-2.0,-0.4,0), dc, ucc);
-% robot_array{end+1} = UR3EC(transl(-2.5,-0.4,0), dc, ucc);
+robot_array{end+1} = UR3EC(transl(-1.5,-0.4,0), dc, ucc);
+robot_array{end+1} = UR3EC(transl(-2.0,-0.4,0), dc, ucc);
+robot_array{end+1} = UR3EC(transl(-2.5,-0.4,0), dc, ucc);
 robot_array{end+1} = ABBC(transl(-0.5,1.2,-0.5) * trotz(pi), dc, ucc);
-% robot_array{end+1} = ABBC(transl(-3.0,0.4,0) * trotz(pi + pi/4),dc, ucc);
+robot_array{end+1} = ABBC(transl(-3.0,-1.2,-0.5),dc, ucc);
 
 RandomBrickArray = createArray(0,0,'cell');
 
-xlim([-6 6]);
-ylim([-3 3]);
-zlim([-0.5 3]);
+xlim([-6 0]);
+ylim([-3 2]);
+zlim([-0.5 2]);
 
 % hold on;
 %         conveyor_belt.render();
@@ -96,8 +96,8 @@ for i = 1:length(robot_array)
 end
 
 function triggerTotalControl(i, robotarray)
-    stick = vrjoystick(1)
-    stick2 = vrjoystick(2) %%Dualsense motion controls, could be funny!
+    stick = vrjoystick(1);
+    stick2 = vrjoystick(2); %%Dualsense motion controls, could be funny!
     robotarray{i}.total_control_activate(stick, stick2);
 end
 
@@ -111,7 +111,7 @@ for i = 1:3000
     %Every tick, random chance to spawn a new Rubbish
     if mod(i,50) == 0
         %Spawn Rubbish or Big Rubbish
-        if rand > 0.1 %regular rubbish
+        if rand > 0.2 %regular rubbish
             r = Rubbish('HalfSizedRedGreenBrick2.ply');
             r.attach_parent(conveyor_belt);
             RandomBrickArray{end+1} = r;
@@ -125,31 +125,31 @@ for i = 1:3000
             dc.register(r);
             r.set_transform_4by4(transl(-0.1,((rand - 0.5) * 0.2),0));
         end
-        
+
     end
 
     %if (~estop_triggered)
     conveyor_belt.tick();
-    for i = 1:length(robot_array)
-        robot_array{i}.tick();
+    for j = 1:length(robot_array)
+        robot_array{j}.tick();
     end
     ucc.tick();
     hold on;
     conveyor_belt.render();
-    for i = 1:length(robot_array);
-        robot_array{i}.render();
+    for j = 1:length(robot_array)
+        robot_array{j}.render();
     end
     hold off;
-        
-     
+
+
     %end
 
     drawnow;
     %waitfor(rate);
-    times(i) = toc(timeStart);
-    %times(i) = timeElapsed;
-    end
+    time = toc(timeStart);
+    times(i) = time;
+end
 
-figure(2);
+figure(5);
 plot(times);
 %profile viewer

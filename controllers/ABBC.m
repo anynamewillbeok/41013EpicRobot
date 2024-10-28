@@ -14,7 +14,7 @@ classdef ABBC < handle & ParentChild & Tickable
 
         projected_object
 
-        home_position = deg2rad([90,-20,-20,0,60,0])
+        home_position = deg2rad([90,-25,0,0,90,0])
 
         dampening_max_lambda = 0.005;
         dampening_velocity_threshold = 0.15;
@@ -25,6 +25,9 @@ classdef ABBC < handle & ParentChild & Tickable
         linkdata(1,6)
 
         p_dc_t %Precomputed Detection Cube additional Transforms
+
+        tick_timeout int64 = 20;
+        current_tick_timeout int64 = 20;
 
         total_control(1,1) logical;
         handle_controller(1,1);
@@ -47,6 +50,7 @@ classdef ABBC < handle & ParentChild & Tickable
         function self = ABBC(transform, detection, ultimate)
             %self.dco = detection;
             self.robot = ABB(transform);
+            self.robot.model.tool = transl(0,0,0.08);
             self.total_control = false;
             self.base_transform = transform;
             self.detection = detection;
@@ -69,7 +73,7 @@ classdef ABBC < handle & ParentChild & Tickable
             %transform 1: towards the conveyor belt idk where that is
             %really
             cube1_transform = transform;
-            cube1_transform = cube1_transform * transl(0, 0.8, 0.5);
+            cube1_transform = cube1_transform * transl(0, 1.2, 0.5);
             cube1_transform = cube1_transform * trscale(0.2, 0.6, 0.5);
             cube1 = DetectionCube(detection,cube1_transform);
             cube1.render();
@@ -118,7 +122,7 @@ classdef ABBC < handle & ParentChild & Tickable
 
             scalelinks = copy(links);
             for i = 1:num_links
-                if links(i).d == 0 & links(i).a == 0
+                if links(i).d == 0 && links(i).a == 0
                     scalelinks(i).d = 0.1;
                     scalelinks(i).a = 0.1;
                 elseif links(i).d == 0
@@ -134,7 +138,9 @@ classdef ABBC < handle & ParentChild & Tickable
         function tick(self)
             self.number_of_ticks = self.number_of_ticks + 1;
 
-            if ~self.total_control;
+            self.current_tick_timeout = self.current_tick_timeout - 1;
+
+            if ~self.total_control && self.current_tick_timeout <= 0
 
                 switch self.state
                     case 0
@@ -174,8 +180,11 @@ classdef ABBC < handle & ParentChild & Tickable
                         DLS_TRIGGERED = 0;
 
                         if self.present_queue_robot.is_empty
-                            delete(self.projected_object.draw_handle);
-                            delete(self.projected_object);
+
+                            if isvalid(self.projected_object.draw_handle)
+                                delete(self.projected_object.draw_handle);
+                            end
+                            
 
 
 
@@ -260,10 +269,16 @@ classdef ABBC < handle & ParentChild & Tickable
                                 al = width(queue);
                                 queue(:,[al al-2]) = queue_dls(:,[al al-2]); %swap out queue for DLS'd queue before submission for links end and end-2
                             end
-                            self.present_queue_robot.add(queue);
-
-
-                            self.state = 2;
+                            if(self.present_queue_robot.add(queue)) %if we fail here, go back to state 0 and try again
+                                self.state = 2;
+                            else
+                                self.state = 0; %trajectory to home
+                                delete(self.projected_object.draw_handle);
+                                delete(self.projected_object);
+                                trajectory = jtraj(self.current_q, self.home_position,PATH_LENGTH);
+                                self.present_queue_robot.add(queue)
+                                self.current_tick_timeout = self.tick_timeout;
+                            end
 
                         end
 
@@ -286,8 +301,11 @@ classdef ABBC < handle & ParentChild & Tickable
                         %Increment state.
                         if self.present_queue_robot.is_empty
 
-                            delete(self.projected_object.draw_handle);
-                            delete(self.projected_object);
+                            if isvalid(self.projected_object.draw_handle)
+                                delete(self.projected_object.draw_handle);
+                            end
+
+                            
 
                             drawnow
                             %find start velocity, same as what we
@@ -306,8 +324,11 @@ classdef ABBC < handle & ParentChild & Tickable
 
                             trajectory = jtraj(self.current_q,new_q,PATH_LENGTH,qdt,[0 0 0 0 0 0]);
 
-                            self.present_queue_robot.add(trajectory);
-                            self.state = 4;
+                            if(self.present_queue_robot.add(trajectory))
+                                self.state = 4;
+                            else %if we fail here just try again
+                                self.current_tick_timeout = self.tick_timeout;
+                            end
                         end
                         %Generate trajectory to neutral position
 
@@ -341,10 +362,14 @@ classdef ABBC < handle & ParentChild & Tickable
 
                             disp(target_location);
                             %generate ikine to bin
-                            new_q = self.robot.model.ikine(target_location,'q0',deg2rad([-90,54,-81,0,0,0]),'mask',[1 1 1 1 1 1],'forceSoln');
+                            new_q = self.robot.model.ikine(target_location,'q0',deg2rad([-90,-54,-18,0,54,0]),'mask',[1 1 1 1 1 1],'forceSoln');
                             trajectory = jtraj(self.current_q,new_q,PATH_LENGTH,[0 1 0 0 0 0],[0 0 0 0 0 0]);
-                            self.present_queue_robot.add(trajectory);
-                            self.state = 5;
+
+                            if(self.present_queue_robot.add(trajectory))
+                                self.state = 5; 
+                            else
+                                self.current_tick_timeout = self.tick_timeout; %if we fail here just try again
+                            end
                         end
                     case 5
                         %Stage 5: Release
@@ -367,8 +392,11 @@ classdef ABBC < handle & ParentChild & Tickable
                             PATH_LENGTH = self.path_lengths(7);
                             new_q = self.home_position;
                             trajectory = jtraj(self.current_q,new_q,PATH_LENGTH);
-                            self.present_queue_robot.add(trajectory);
-                            self.state = 0;
+                            if(self.present_queue_robot.add(trajectory))
+                                self.state = 0; 
+                            else
+                                self.current_tick_timeout = self.tick_timeout; %if we fail here just try again
+                            end
                         end
 
 
@@ -410,7 +438,7 @@ classdef ABBC < handle & ParentChild & Tickable
                         projected_position(3,4) = projected_position(3,4) + self.height_gap;
                         projected_position(1:3,1:3) = eye(3); %%reset rotation of projected brick position
                         projected_position = projected_position * trotx(pi); %pointing DOWN
-                        moveto = self.robot.model.ikine(projected_position,'q0',deg2rad([90 50 -140 90 0 0]),'mask',[1 1 1 1 1 1],'verbose=2');
+                        moveto = self.robot.model.ikine(projected_position,'q0',self.home_position,'mask',[1 1 1 1 1 1],'verbose=2');
 
 
                         %generate RMRC to get proper joint velocity to smoothly
@@ -421,12 +449,21 @@ classdef ABBC < handle & ParentChild & Tickable
                         qd = jaci * [self.tracked_object_velocity(1) * PATH_LENGTH self.tracked_object_velocity(2) * PATH_LENGTH (-self.height_gap / self.path_lengths(2)) * PATH_LENGTH 0 0 0]';
 
                         trajectory = jtraj(self.robot.model.getpos,moveto,PATH_LENGTH,[0 0 0 0 0 0],qd');
-                        self.present_queue_robot.add(trajectory);
 
                         self.projected_object = projectedObject;
-                        self.state = 1;
+
+                        if(self.present_queue_robot.add(trajectory)) %If we fail here, go back to original state
+                            self.state = 1;
+                            
+                        else
+                            self.state = 0; %havent moved yet so no need to generate new trajectory to home
+                            self.current_tick_timeout = self.tick_timeout;
+                            delete(projectedObject.draw_handle);
+                            delete(projectedObject);
+
+                        end
                 end
-            else
+            elseif self.total_control
 
                 %TOTAL CONTROL: controller time!
 

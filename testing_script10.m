@@ -102,7 +102,7 @@ for i = 1:length(robot_array)
 end
 
 function triggerTotalControl(i, robotarray)
-    stick = vrjoystick(1)
+    stick = vrjoystick(1);
     robotarray{i}.total_control_activate(stick);
 end
 

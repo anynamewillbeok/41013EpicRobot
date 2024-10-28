@@ -30,7 +30,7 @@ classdef FIFO < handle & ParentChild
         function force_add(self,matrix)
             self.queue = vertcat(self.queue,matrix);
             if isempty(self.active)
-                self.pull()
+                self.pull();
             end
         end
 

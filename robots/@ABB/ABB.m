@@ -38,12 +38,12 @@ classdef ABB < RobotBaseClassNT
         function CreateModel(self)
             %create ABB section
 
-            link(1) = Link('d',0.445,'a',0.1404,'alpha',pi/2,'qlim',deg2rad([-360 360]), 'offset',0);
-            link(2) = Link('d',0.17,'a',0.7,'alpha', 0, 'qlim',deg2rad([-360 360]), 'offset',pi/2);
-            link(3) = Link('d',-0.17,'a',0.115,'alpha',pi/2);
-            link(4) = Link('d',0.8,'a',0,'alpha',pi/2);
-            link(5) = Link('d',0,'a',0,'alpha',-pi/2);
-            link(6) = Link('d',0,'a',0);
+            link(1) = Link('d',0.445,'a',0.1404,'alpha',pi/2,'qlim',deg2rad([-180 180]), 'offset',0);
+            link(2) = Link('d',0.17,'a',0.7,'alpha', 0, 'qlim',deg2rad([-155 95]), 'offset',pi/2);
+            link(3) = Link('d',-0.17,'a',0.115,'alpha',pi/2, 'qlim',deg2rad([-75 180]));
+            link(4) = Link('d',0.8,'a',0,'alpha',pi/2, 'qlim',deg2rad([-400 400]));
+            link(5) = Link('d',0,'a',0,'alpha',-pi/2,'qlim',deg2rad([-120 120]));
+            link(6) = Link('d',0,'a',0,'qlim',deg2rad([-400 400]));
             
             
             
@@ -51,7 +51,7 @@ classdef ABB < RobotBaseClassNT
             
              
             self.model = SerialLink(link,'name',self.name);
-            self.model.ikineType = "puma"
+            self.model.ikineType = "puma";
         end      
     end
 end

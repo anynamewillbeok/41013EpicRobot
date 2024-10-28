@@ -14,7 +14,7 @@ classdef (Abstract) GenericRenderable < handle & ParentChild & Tickable & matlab
         needsRedraw(1,1) logical {} = true;
     end
     properties
-        draw_handle (1,:) %matlab.graphics.primitive.Patch {}  
+        draw_handle (1,:) matlab.graphics.primitive.Patch {}  
     end
 
     methods
@@ -30,6 +30,14 @@ classdef (Abstract) GenericRenderable < handle & ParentChild & Tickable & matlab
                 [self.tri, self.pts] = plyread(ply_file, 'tri');
             end    
         end
+        %% Delete Self
+        function delete(self)
+            try
+                delete(self.draw_handle) 
+            catch
+            end
+        end
+
         %% Set transform for object
         function set_transform_4by4(self, matrix)
 

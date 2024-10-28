@@ -2,8 +2,6 @@ classdef UltimateCollisionChecker < handle & ParentChild & Tickable
     properties
         pc_type = "UCC";
         detection_cube_cache;
-        collision_handle_array;
-        time_since_called = 0;
         
     end
 %Attached Children are all meant to be Robot Q position FIFO queues
@@ -17,20 +15,12 @@ classdef UltimateCollisionChecker < handle & ParentChild & Tickable
 
         function tick(self)
             self.number_of_ticks = self.number_of_ticks + 1;
-            self.time_since_called = self.time_since_called + 1;
             %must tick our cache
             self.detection_cube_cache.pull();
-
-            if self.time_since_called == 15;
-                for i = 1:length(self.collision_handle_array);
-                    self.collision_handle_array(i).draw_handle.FaceAlpha = 0;
-                end
-            end
-
         end
 
         function collision = check_collision(self, calling_q_matrix, calling_fifo)
-            self.time_since_called = 0;
+
             %tic;
 
             % theProfiler = false;
@@ -153,8 +143,7 @@ classdef UltimateCollisionChecker < handle & ParentChild & Tickable
             theheight2 = height(ultimate_dcube_array);
 
             %collisiontest = createArray(theheight2,1,"logical");
-            collision_this_row = false;
-            
+            thecollision = false;
             collision = false;
 
             
@@ -164,33 +153,32 @@ classdef UltimateCollisionChecker < handle & ParentChild & Tickable
 
             
             for rowSelector = 1:theheight2
-                if collision_this_row %stop checking further rows if a collision in a previous row occured
-                    break
-                end
                 collision_this_row = false;
-                sliced_ultimate_dcube_array = ultimate_dcube_array(rowSelector,:);
-                for j = 1:num_children
-                    if calling_fifo_index ~= j %dont check self
-                        checked_length = length(sliced_ultimate_dcube_array{calling_fifo_index});
-                        for CubeSelector = 1:checked_length
-                            checked_length_2 = length(sliced_ultimate_dcube_array{j});
-                            for CubeSelectorTarget = 1:checked_length_2
-                                collision_test = sliced_ultimate_dcube_array{calling_fifo_index}{CubeSelector}.check_dc(sliced_ultimate_dcube_array{j}{CubeSelectorTarget});
-                                if collision_test & ~collision_this_row
-                                    collision_this_row = true;
-                                    collision = true;
-                                    self.drawCollisionData(rowSelector, calling_fifo_index, CubeSelector, j, CubeSelectorTarget, ultimate_dcube_array);
-                                    %draw first collision cubes that do collide then check no further, because obviously something bad will happen
-                                    %toc;
-                                    warning("Robots will collide.");
-                                    return;
+                sliced_ultimate_dcube_array = ultimate_dcube_array(rowSelector,:); 
+                    for j = 1:num_children
+                        if calling_fifo_index ~= j %dont check self
+                            if ~thecollision
+                            for CubeSelector = 1:length(sliced_ultimate_dcube_array{calling_fifo_index})
+                                for CubeSelectorTarget = 1:length(sliced_ultimate_dcube_array{j})
+                                    collision_test = sliced_ultimate_dcube_array{calling_fifo_index}{CubeSelector}.check_dc(sliced_ultimate_dcube_array{j}{CubeSelectorTarget});
+                                    if collision_test
+                                        collision_this_row 
+                                    if collision_test | collision_this_row
+                                        collision_this_row = true;
+                                        thecollision = true;
+                                        collision = true;
+                                        self.drawCollisionData(rowSelector, i, CubeSelector, j, CubeSelectorTarget, ultimate_dcube_array);
+                                        %draw first collision cubes that do collide then check no further, because obviously something bad will happen
+                                        %toc;
+                                        warning("Robots will collide.");
+                                        return;
+                                    end
                                 end
                             end
                         end
                     end
                 end
             end
-        
             
             
 
@@ -208,8 +196,7 @@ classdef UltimateCollisionChecker < handle & ParentChild & Tickable
             return
         end
 
-        function drawCollisionData(self, row, robot1, offendingcube, robot2, offendingcube2, dcube_array)
-            self.collision_handle_array = DetectionCube.empty(1,0);
+        function drawCollisionData(~, row, robot1, offendingcube, robot2, offendingcube2, dcube_array)
             robot_1_cubes = dcube_array{row, robot1};
             robot_2_cubes = dcube_array{row, robot2};
 
@@ -224,20 +211,18 @@ classdef UltimateCollisionChecker < handle & ParentChild & Tickable
                 handle.FaceColor = [0.4660 0.6740 0.1880];
                 handle.FaceAlpha = 0.4;
                 end
-                self.collision_handle_array(end + 1) = robot_1_cubes{i};
             end
-            for j = 1:length(robot_2_cubes)
-                robot_2_cubes{j}.needsRedraw = 1;
-                robot_2_cubes{j}.needsRepatch = 1;
-                handle = robot_2_cubes{j}.render();
-                if j == offendingcube2
+            for i = 1:length(robot_2_cubes)
+                robot_2_cubes{i}.needsRedraw = 1;
+                robot_2_cubes{i}.needsRepatch = 1;
+                handle = robot_2_cubes{i}.render();
+                if i == offendingcube2
                 handle.FaceColor = "red";
                 handle.FaceAlpha = 0.7;
                 else
                 handle.FaceColor = [0.4660 0.6740 0.1880];
                 handle.FaceAlpha = 0.4;
                 end
-                self.collision_handle_array(end + 1) = robot_2_cubes{j};
             end
         end
 

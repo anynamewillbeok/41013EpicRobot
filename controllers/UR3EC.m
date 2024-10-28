@@ -8,6 +8,7 @@ classdef UR3EC < handle & ParentChild & Tickable
         detection(1,1) DetectionController
         detection_cubes(1,:) DetectionCube
         path_lengths = [50,35,50,50,50,50,50,50];
+        home_position = deg2rad([90,-120,-60,-90,90,0]);
         height_gap = 0.2 %Distance buffer to have between jtraj and RMRC when doing downwards motion
         projected_object
         filter_type = "Rubbish";
@@ -25,6 +26,9 @@ classdef UR3EC < handle & ParentChild & Tickable
         rotation_score(1,1);
         camera_transform_offsets = pi/4; %rotation around robot
         camera_height_offset = -pi/4;
+
+        tick_timeout int64 = 20;
+        current_tick_timeout int64 = 20;
 
         p_dc_t %Precomputed Detection Cube additional Transforms
         
@@ -46,7 +50,7 @@ classdef UR3EC < handle & ParentChild & Tickable
             self.base_transform = transform;
             self.detection = detection;
             self.robot.model.animate(deg2rad([90,-120,-60,-90,90,0]));
-            self.current_q = deg2rad([90,-120,-60,-90,90,0]);
+            self.current_q = self.home_position;
 
             self.linkdata = self.robot.model.links;
 
@@ -71,7 +75,7 @@ classdef UR3EC < handle & ParentChild & Tickable
             self.detection_cubes(1) = cube1;
 
             bin1_transform = transform;
-            bin1_transform = bin1_transform * transl(0,-0.5,-0.5);
+            bin1_transform = bin1_transform * transl(0.1,-0.4,-0.5);
             bin1_transform = bin1_transform * trscale(0.4,0.4,0.5);
             bin = Bin("Bin.ply",detection, bin1_transform);
             bin.attach_parent(self);
@@ -128,8 +132,11 @@ classdef UR3EC < handle & ParentChild & Tickable
 
         function tick(self)
             self.number_of_ticks = self.number_of_ticks + 1;
+            self.current_tick_timeout = self.current_tick_timeout - 1;
 
-            if ~self.total_control
+            if ~self.total_control && self.current_tick_timeout <= 0
+                %If FIFO fails, dont increment case and set
+                %current_tick_timeout to tick_timeout
                 switch self.state
                     case 0
                         if self.present_queue_robot.is_empty
@@ -165,8 +172,9 @@ classdef UR3EC < handle & ParentChild & Tickable
                         %rubbish? then emit
 
                         if self.present_queue_robot.is_empty
-                            delete(self.projected_object.draw_handle);
-                            delete(self.projected_object);
+                            if isvalid(self.projected_object.draw_handle)
+                                delete(self.projected_object.draw_handle);
+                            end
 
 
 
@@ -195,9 +203,19 @@ classdef UR3EC < handle & ParentChild & Tickable
                                 local_q = local_q + qdt;
                                 queue(i,:) = local_q;
                             end
-                            self.present_queue_robot.add(queue);
+                            
+                            if(self.present_queue_robot.add(queue)) %if we fail here, go back to state 0 and try again
+                                self.state = 2;
+                            else
+                                self.state = 0; %trajectory to home
+                                delete(self.projected_object.draw_handle);
+                                delete(self.projected_object);
+                                trajectory = jtraj(self.current_q, self.home_position,PATH_LENGTH);
+                                self.present_queue_robot.add(queue)
+                                self.current_tick_timeout = self.tick_timeout;
+                            end
 
-                            self.state = 2;
+                            
 
                         end
 
@@ -220,15 +238,19 @@ classdef UR3EC < handle & ParentChild & Tickable
                         %Increment state.
                         if self.present_queue_robot.is_empty
 
-                            delete(self.projected_object.draw_handle);
-                            delete(self.projected_object);
+                            if isvalid(self.projected_object.draw_handle)
+                                delete(self.projected_object.draw_handle);
+                            end
+
+                            
+                            %delete(self.projected_object);
 
                             %drawnow
                             %find start velocity, same as what we
                             %did in case 1
                             self.tracked_object{1}.attach_parent(self);
                             PATH_LENGTH = self.path_lengths(4);
-                            new_q = deg2rad([90,-90,0,-90,-90,0]);
+                            new_q = deg2rad([90,-60,30,-90,-90,0]);
                             jac = self.robot.model.jacob0(self.current_q);
                             jaci = inv(jac);
                             qd = jaci * [self.tracked_object_velocity(1) * PATH_LENGTH self.tracked_object_velocity(2) * PATH_LENGTH 0 0 0 0]';
@@ -239,8 +261,11 @@ classdef UR3EC < handle & ParentChild & Tickable
 
                             trajectory = jtraj(self.current_q,new_q,PATH_LENGTH,qdt,[0 1 0 0 0 0]);
 
-                            self.present_queue_robot.add(trajectory);
-                            self.state = 4;
+                            if(self.present_queue_robot.add(trajectory))
+                                self.state = 4;
+                            else %if we fail here just try again
+                                self.current_tick_timeout = self.tick_timeout;
+                            end
                         end
                         %Generate trajectory to neutral position
 
@@ -268,18 +293,22 @@ classdef UR3EC < handle & ParentChild & Tickable
                             target_location = target_location * trotx(pi); %and also have the end effector Z reversed
                             %scale target_location rotation vectors to have
                             %length 1
-                            for i = 1:3
-                                target_location(1:3,i) = target_location(1:3,i)/norm(target_location(1:3,i));
-                            end
+                            % for i = 1:3
+                            %     target_location(1:3,i) = target_location(1:3,i)/norm(target_location(1:3,i));
+                            % end
 
                             %disp(target_location);
                             %generate ikine to bin
-                            new_q = self.robot.model.ikine(target_location,'q0',deg2rad([90 -30 30 -90 -90 0]),'mask',[1 1 1 1 1 1],'forceSoln');
+                            new_q = self.robot.model.ikine(target_location,'q0',deg2rad([90 -51.6 51.6 -90 -90 0]),'mask',[1 1 1 1 1 1],'tol',0.007,'forceSoln');
 
 
                             trajectory = jtraj(self.current_q,new_q,PATH_LENGTH,[0 1 0 0 0 0],[0 0 0 0 0 0]);
-                            self.present_queue_robot.add(trajectory);
-                            self.state = 5;
+
+                            if(self.present_queue_robot.add(trajectory))
+                                self.state = 5; 
+                            else
+                                self.current_tick_timeout = self.tick_timeout; %if we fail here just try again
+                            end
                         end
                     case 5
                         %Stage 5: Release
@@ -300,10 +329,14 @@ classdef UR3EC < handle & ParentChild & Tickable
                         %Set state to 0.
                         if self.present_queue_robot.is_empty
                             PATH_LENGTH = self.path_lengths(7);
-                            new_q = deg2rad([90,-120,-60,-90,90,0]);
+                            new_q = self.home_position;
                             trajectory = jtraj(self.current_q,new_q,PATH_LENGTH);
-                            self.present_queue_robot.add(trajectory);
-                            self.state = 0;
+
+                            if(self.present_queue_robot.add(trajectory))
+                                self.state = 0; 
+                            else
+                                self.current_tick_timeout = self.tick_timeout; %if we fail here just try again
+                            end
                         end
                     case 7
                     case 8
@@ -352,14 +385,26 @@ classdef UR3EC < handle & ParentChild & Tickable
                         qd = jaci * [self.tracked_object_velocity(1) * PATH_LENGTH self.tracked_object_velocity(2) * PATH_LENGTH (-self.height_gap / self.path_lengths(2)) * PATH_LENGTH 0 0 0]';
 
                         trajectory = jtraj(self.robot.model.getpos,moveto,PATH_LENGTH,[0 0 0 0 0 0],qd);
-                        self.present_queue_robot.add(trajectory);
 
                         self.projected_object = projectedObject;
-                        self.state = 1;
+
+                        if(self.present_queue_robot.add(trajectory)) %If we fail here, go back to original state
+                            self.state = 1;
+                            
+                        else
+                            self.state = 0; %havent moved yet so no need to generate new trajectory to home
+                            self.current_tick_timeout = self.tick_timeout;
+                            delete(projectedObject.draw_handle);
+                            delete(projectedObject);
+                            
+                        end
+
+                        
+                        %self.state = 1;
 
 
                 end
-            else
+            elseif self.total_control
                 
                 %TOTAL CONTROL: controller time!
                 
@@ -455,7 +500,7 @@ classdef UR3EC < handle & ParentChild & Tickable
                 %flat) (anticlockwise positive)
                 %axis 6 is roll speed (anticlockwise positive
 
-                disp(motion_axes);
+                %disp(motion_axes);
 
                 self.rotation_score = self.rotation_score + motion_axes(5);
 
