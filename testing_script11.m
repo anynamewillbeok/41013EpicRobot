@@ -42,18 +42,18 @@ drawnow;
 
 ucc = UltimateCollisionChecker;
 robot_ur3e = UR3EC(transl(-1.0,-0.4,0), dc, ucc);
-% robot_ur3e2 = UR3EC(transl(-1.5,-0.4,0), dc, ucc);
+robot_ur3e2 = UR3EC(transl(-1.5,-0.4,0), dc, ucc);
 % robot_ur3e3 = UR3EC(transl(-2.0,-0.4,0), dc, ucc);
 % robot_ur3e4 = UR3EC(transl(-2.5,-0.4,0), dc, ucc);
-% robot_abbc = ABBC(transl(-0.5,0.8,0) * trotz(pi),dc, ucc);
+robot_abbc = ABBC(transl(-0.5,0.8,0) * trotz(pi),dc, ucc);
 % robot_abbc2 = ABBC(transl(-3.0,0.4,0) * trotz(pi + pi/4),dc, ucc);
 
-robot_array = cell(1,1);
+robot_array = cell(1,3);
 robot_array{1} = robot_ur3e;
-% robot_array{2} = robot_ur3e2;
+robot_array{2} = robot_ur3e2;
 % robot_array{3} = robot_ur3e3;
 % robot_array{4} = robot_ur3e4;
-% robot_array{5} = robot_abbc;
+robot_array{3} = robot_abbc;
 % robot_array{6} = robot_abbc2;
 
 RandomBrickArray = createArray(0,0,'cell');
@@ -108,15 +108,15 @@ end
 
 
 
-times = createArray(1,3000,"double");
+times = createArray(1,10000,"double");
 i = 0;
 
-for i = 1:3000
+for i = 1:10000
     timeStart = tic;
     %Every tick, random chance to spawn a new Rubbish
-    if mod(i,50) == 0
+    if mod(i,200) == 0
         %Spawn Rubbish or Big Rubbish
-        if rand > 0.25 %regular rubbish
+        if rand > 0 %regular rubbish
             r = Rubbish('HalfSizedRedGreenBrick2.ply');
             r.attach_parent(conveyor_belt);
             RandomBrickArray{end+1} = r;
@@ -136,19 +136,19 @@ for i = 1:3000
     %if (~estop_triggered)
         conveyor_belt.tick();
     robot_ur3e.tick();
-    % robot_ur3e2.tick();
+    robot_ur3e2.tick();
     % robot_ur3e3.tick();
     % robot_ur3e4.tick();
-    % robot_abbc.tick();
+    robot_abbc.tick();
     % robot_abbc2.tick();
     ucc.tick();
         hold on;
         conveyor_belt.render();
     robot_ur3e.render();
-    % robot_ur3e2.render();
+    robot_ur3e2.render();
     % robot_ur3e3.render();
     % robot_ur3e4.render();
-    % robot_abbc.render();
+    robot_abbc.render();
     % robot_abbc2.render();
         hold off;
     %end
