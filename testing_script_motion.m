@@ -7,17 +7,16 @@ view(3);
 figure(1);
 
 drawnow();
+
 conveyor_belt = ConveyorBelt('ConveyorBeltFixed.PLY');
-
 conveyor_belt.set_transform_4by4(eye(4));
+conveyor_belt.render();
 
-a = Rubbish('HalfSizedRedGreenBrick2.ply');
-b = Rubbish('HalfSizedRedGreenBrick2.ply');
-c = Rubbish('HalfSizedRedGreenBrick2.ply');
+barrier_1 = SceneObject('human.ply');
+barrier_1.set_transform_4by4(eye(4));
+barrier_1.render();
 
 dc = DetectionController;
-
-conveyor_belt.render();
 
 light('Style','local','Position',[ -1.5 0 2],'Parent',gca);
 
