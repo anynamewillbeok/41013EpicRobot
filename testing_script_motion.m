@@ -1,9 +1,8 @@
 clear all;
 
+%% INITALISE SCENE: create robots, conveyor belt, rubbish array and supporting elements
+
 view(3);
-xlim([-3 0]);
-ylim([-1.3 0.5]);
-zlim([-0.5 1.3]);
 
 figure(1);
 
@@ -17,28 +16,12 @@ b = Rubbish('HalfSizedRedGreenBrick2.ply');
 c = Rubbish('HalfSizedRedGreenBrick2.ply');
 
 dc = DetectionController;
-% dc.register(a);
-% dc.register(b);
-% dc.register(c);
-% 
-% a.attach_parent(conveyor_belt);
-% a.set_transform_4by4(transl(0,0,0));
-% 
-% b.attach_parent(conveyor_belt);
-% b.set_transform_4by4(transl(0.3,-0.1,0));
-% 
-% c.attach_parent(conveyor_belt);
-% c.set_transform_4by4(transl(-0.2,0.1,0));
 
 conveyor_belt.render();
 
 light('Style','local','Position',[ -1.5 0 2],'Parent',gca);
 
-
 drawnow;
-
-
-
 
 ucc = UltimateCollisionChecker;
 
@@ -68,6 +51,8 @@ zlim([-0.5 2]);
 
 %rate = rateControl(30);
 %profile on -timestamp -historysize 10000000 -timer performance
+
+%% UI & E-STOP
 
 global eStop_triggered
 eStop_triggered = false;
@@ -101,7 +86,7 @@ function triggerTotalControl(i, robotarray)
     robotarray{i}.total_control_activate(stick, stick2);
 end
 
-
+%% RUN SIMULATION
 
 times = createArray(1,3000,"double");
 i = 0;
